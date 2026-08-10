@@ -1,0 +1,17 @@
+# Python & Environment
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Databases & Vector DBs
+.data/
+data/*.db
+.chromadb/
+
+# IDE & System
+.vscode/
+.idea/
+*.log
+.DS_Store

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>my_neo-agent | AI Coding Agent Dashboard</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Highlight.js Theme -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-grid"></div>
+    <div class="cyber-glow-orb glow-top-left"></div>
+    <div class="cyber-glow-orb glow-bottom-right"></div>
+
+    <div class="app-layout">
+        <!-- Top Navigation Header -->
+        <header class="app-header glass-panel">
+            <div class="brand-section">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-terminal"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>my_neo-agent <span class="badge-v1">v1.0</span></h1>
+                    <p>Autonomous AI Coding Agent & Language Engine</p>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <div class="control-group">
+                    <label for="model-select"><i class="fa-solid fa-microchip"></i> Active Model:</label>
+                    <select id="model-select" class="cyber-select">
+                        <option value="qwen2.5-coder:latest">Qwen 2.5 Coder (Recommended)</option>
+                        <option value="llama3.2:latest">Llama 3.2 (Fast)</option>
+                        <option value="deepseek-r1:latest">DeepSeek R1 (Reasoning)</option>
+                        <option value="codellama:7b">CodeLlama 7B</option>
+                        <option value="mock-neo-model">Neo Simulated Engine</option>
+                    </select>
+                </div>
+
+                <button id="reindex-btn" class="cyber-button secondary">
+                    <i class="fa-solid fa-rotate-right"></i> Re-index Workspace
+                </button>
+
+                <div class="connection-status" id="connection-status">
+                    <span class="status-dot disconnected"></span>
+                    <span class="status-text">Disconnected</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Grid -->
+        <main class="main-container">
+            
+            <!-- Left Sidebar: Mascot Widget & Codebase Context -->
+            <aside class="sidebar-panel glass-panel">
+                <!-- Mascot Card -->
+                <div class="mascot-widget-card">
+                    <div class="mascot-header">
+                        <span class="mascot-title"><i class="fa-solid fa-robot"></i> NEO MASCOT</span>
+                        <span id="mascot-state-badge" class="state-badge idle">IDLE</span>
+                    </div>
+
+                    <div class="mascot-viewport" id="mascot-viewport">
+                        <canvas id="mascot-canvas" width="280" height="240"></canvas>
+                    </div>
+
+                    <div class="mascot-status-footer">
+                        <i class="fa-solid fa-pulse fa-circle-dot" id="mascot-pulse-icon"></i>
+                        <span id="mascot-status-text">System ready and waiting for prompt...</span>
+                    </div>
+                </div>
+
+                <!-- Codebase Context Explorer -->
+                <div class="file-explorer-card">
+                    <div class="card-title">
+                        <h3><i class="fa-solid fa-folder-tree"></i> Workspace Explorer</h3>
+                        <span id="file-count-badge" class="count-badge">0 files</span>
+                    </div>
+
+                    <div class="file-tree-container" id="file-tree-container">
+                        <div class="loading-spinner"><i class="fa-solid fa-circle-notch fa-spin"></i> Scanning workspace...</div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Center Panel: Chat Stream & Interactive Prompt -->
+            <section class="chat-panel glass-panel">
+                <div class="chat-header">
+                    <div class="chat-title">
+                        <i class="fa-solid fa-comments"></i> Stream Conversation
+                    </div>
+                    <div class="chat-actions">
+                        <button id="clear-chat-btn" class="icon-btn" title="Clear Chat Window">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Scrollable Chat Stream Container -->
+                <div class="chat-messages" id="chat-messages">
+                    <div class="message system-message">
+                        <div class="msg-avatar system-avatar">
+                            <i class="fa-solid fa-microchip"></i>
+                        </div>
+                        <div class="msg-bubble">
+                            <div class="msg-author">NEO System Initialized</div>
+                            <div class="msg-content">
+                                Welcome to <strong>my_neo-agent Dashboard</strong>. Ask me to generate code, refactor files, explain concepts, or execute workspace commands.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prompt Input Bar -->
+                <div class="chat-input-area">
+                    <form id="chat-form" class="input-form">
+                        <div class="textarea-wrapper">
+                            <textarea id="user-input" placeholder="Ask my_neo-agent to write code, refactor, or run tasks..." rows="1"></textarea>
+                        </div>
+                        <button type="submit" id="send-btn" class="cyber-button primary">
+                            <span>Send</span> <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Right Panel: Live Execution Log & Tools Timeline -->
+            <aside class="execution-panel glass-panel">
+                <div class="panel-header">
+                    <h3><i class="fa-solid fa-terminal"></i> Live Execution Terminal</h3>
+                    <span id="exec-status-badge" class="exec-badge idle">STANDBY</span>
+                </div>
+
+                <div class="timeline-container">
+                    <div class="timeline-step" id="step-plan">
+                        <div class="step-icon"><i class="fa-solid fa-brain"></i></div>
+                        <div class="step-info">
+                            <div class="step-title">1. Planning & Context</div>
+                            <div class="step-sub">Scan codebase dependencies</div>
+                        </div>
+                    </div>
+                    <div class="timeline-step" id="step-verify">
+                        <div class="step-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                        <div class="step-info">
+                            <div class="step-title">2. Verification Check</div>
+                            <div class="step-sub">Human-in-the-loop permission</div>
+                        </div>
+                    </div>
+                    <div class="timeline-step" id="step-executing">
+                        <div class="step-icon"><i class="fa-solid fa-gear"></i></div>
+                        <div class="step-info">
+                            <div class="step-title">3. Tool Execution</div>
+                            <div class="step-sub">Run bash/file writes</div>
+                        </div>
+                    </div>
+                    <div class="timeline-step" id="step-repair">
+                        <div class="step-icon"><i class="fa-solid fa-wrench"></i></div>
+                        <div class="step-info">
+                            <div class="step-title">4. Self-Correction</div>
+                            <div class="step-sub">Auto-fix lints & runtime errors</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="terminal-log-wrapper">
+                    <div class="terminal-topbar">
+                        <span class="term-dot red"></span>
+                        <span class="term-dot yellow"></span>
+                        <span class="term-dot green"></span>
+                        <span class="term-title">execution_stream.log</span>
+                    </div>
+                    <pre class="terminal-body" id="terminal-body"><code>[SYSTEM] Neo Terminal Logger ready. Waiting for task execution...</code></pre>
+                </div>
+            </aside>
+
+        </main>
+    </div>
+
+    <!-- Permission Modal Prompt Overlay -->
+    <div class="modal-overlay" id="permission-modal">
+        <div class="modal-card glass-panel-modal">
+            <div class="modal-header">
+                <div class="modal-warning-icon">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <h2>Permission Requested</h2>
+                    <p class="modal-subtitle">Security approval required to execute agent operation</p>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <div class="perm-detail-row">
+                    <span class="label">Action:</span>
+                    <span class="value" id="perm-action-desc">Run workspace bash execution script</span>
+                </div>
+                <div class="perm-detail-row">
+                    <span class="label">Risk Level:</span>
+                    <span class="badge risk-medium" id="perm-risk-badge">MEDIUM RISK</span>
+                </div>
+
+                <div class="command-preview-box">
+                    <div class="box-label"><i class="fa-solid fa-code"></i> Targeted System Command / Write:</div>
+                    <code id="perm-command-code">neo-agent execute --task "build project"</code>
+                </div>
+
+                <p class="perm-warning-text">
+                    <i class="fa-solid fa-shield-cat"></i> Do you grant permission for my_neo-agent to execute this action?
+                </p>
+            </div>
+
+            <div class="modal-footer">
+                <button id="perm-deny-btn" class="cyber-button danger">
+                    <i class="fa-solid fa-xmark"></i> Deny Action
+                </button>
+                <button id="perm-approve-btn" class="cyber-button success">
+                    <i class="fa-solid fa-check"></i> Authorize & Execute
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- External JS Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
+    <!-- Application Scripts -->
+    <script src="mascot.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
