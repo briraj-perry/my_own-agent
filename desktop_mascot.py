@@ -193,17 +193,17 @@ class FloatingMascotApp:
         settings_dlg.title("⚙️ Mascot & Appearance Settings")
         settings_dlg.geometry("540x520")
         settings_dlg.attributes("-topmost", True)
-        settings_dlg.config(bg="#090710")
+        settings_dlg.config(bg="#f8fafc")
 
-        lbl_hdr = tk.Label(settings_dlg, text="⚙️ Select Desktop Mascot Character", bg="#120e20", fg="#00f5d4", font=("Outfit", 12, "bold"), pady=10)
+        lbl_hdr = tk.Label(settings_dlg, text="⚙️ Select Desktop Mascot Character", bg="#ffffff", fg="#0f172a", font=("Outfit", 12, "bold"), pady=10)
         lbl_hdr.pack(fill="x", side="top")
 
-        lbl_sub = tk.Label(settings_dlg, text="Click any character below to switch live! All patches removed for 100% transparent overlay.", bg="#090710", fg="#e0aaff", font=("Segoe UI", 9), pady=6)
+        lbl_sub = tk.Label(settings_dlg, text="Click any character below to switch live! All patches removed for 100% transparent overlay.", bg="#f8fafc", fg="#64748b", font=("Segoe UI", 9), pady=6)
         lbl_sub.pack()
 
         selected_var = tk.StringVar(value=self.active_theme_key)
 
-        grid_frame = tk.Frame(settings_dlg, bg="#090710")
+        grid_frame = tk.Frame(settings_dlg, bg="#f8fafc")
         grid_frame.pack(fill="both", expand=True, padx=16, pady=10)
 
         card_frames = {}
@@ -212,8 +212,8 @@ class FloatingMascotApp:
             for k, card_el in card_frames.items():
                 is_active = (k == active_key)
                 card_el.config(
-                    bg="#141020" if is_active else "#0d0918",
-                    highlightbackground="#7b2cbf" if is_active else "#221838"
+                    bg="#e0e7ff" if is_active else "#ffffff",
+                    highlightbackground="#4f46e5" if is_active else "#e2e8f0"
                 )
 
         def on_select_theme(key):
@@ -222,7 +222,7 @@ class FloatingMascotApp:
             update_card_visuals(key)
 
         for key, info in MASCOT_THEMES.items():
-            card = tk.Frame(grid_frame, bg="#141020" if self.active_theme_key == key else "#0d0918", bd=1, relief="solid", highlightbackground="#7b2cbf" if self.active_theme_key == key else "#221838", highlightthickness=2)
+            card = tk.Frame(grid_frame, bg="#e0e7ff" if self.active_theme_key == key else "#ffffff", bd=1, relief="solid", highlightbackground="#4f46e5" if self.active_theme_key == key else "#e2e8f0", highlightthickness=2)
             card.pack(fill="x", pady=6, ipady=6, ipadx=8)
             card_frames[key] = card
 
@@ -232,16 +232,16 @@ class FloatingMascotApp:
                 variable=selected_var,
                 value=key,
                 bg=card.cget("bg"),
-                fg="#00f5d4",
-                selectcolor="#221838",
+                fg="#0f172a",
+                selectcolor="#ffffff",
                 activebackground=card.cget("bg"),
-                activeforeground="#00f5d4",
+                activeforeground="#0f172a",
                 font=("Segoe UI", 11, "bold"),
                 command=lambda k=key: on_select_theme(k)
             )
             rb.pack(anchor="w", side="top", padx=8)
 
-            desc = tk.Label(card, text=info["desc"], bg=card.cget("bg"), fg="#a7a3b4", font=("Segoe UI", 9))
+            desc = tk.Label(card, text=info["desc"], bg=card.cget("bg"), fg="#64748b", font=("Segoe UI", 9))
             desc.pack(anchor="w", padx=28)
             
             # Make entire card clickable
@@ -254,7 +254,7 @@ class FloatingMascotApp:
             messagebox.showinfo("Mascot Updated", f"🎉 Mascot successfully active:\n{MASCOT_THEMES[new_theme]['name']}!")
             settings_dlg.destroy()
 
-        btn_save = tk.Button(settings_dlg, text="Done 🚀", bg="#7b2cbf", fg="#ffffff", font=("Segoe UI", 10, "bold"), bd=0, command=apply_choice)
+        btn_save = tk.Button(settings_dlg, text="Done 🚀", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 10, "bold"), bd=0, command=apply_choice)
         btn_save.pack(pady=12, ipadx=20, ipady=6)
 
     def on_click(self, event):
@@ -432,28 +432,28 @@ class FloatingMascotApp:
         self.chat_window.title("my_neo-agent Companion Studio")
         self.chat_window.geometry("680x740")
         self.chat_window.attributes("-topmost", True)
-        self.chat_window.config(bg="#090710")
+        self.chat_window.config(bg="#f8fafc")
 
-        # Apply ttk Dark Theme Styles
+        # Apply ttk Professional Light Theme Styles
         style = ttk.Style()
         style.theme_use('default')
-        style.configure('TNotebook', background='#090710', borderwidth=0)
-        style.configure('TNotebook.Tab', background='#141020', foreground='#e0aaff', padding=[16, 9], font=('Segoe UI', 10, 'bold'))
-        style.map('TNotebook.Tab', background=[('selected', '#7b2cbf')], foreground=[('selected', '#ffffff')])
+        style.configure('TNotebook', background='#f8fafc', borderwidth=0)
+        style.configure('TNotebook.Tab', background='#e2e8f0', foreground='#475569', padding=[16, 9], font=('Segoe UI', 10, 'bold'))
+        style.map('TNotebook.Tab', background=[('selected', '#4f46e5')], foreground=[('selected', '#ffffff')])
 
         # Top Header Bar
-        header_frame = tk.Frame(self.chat_window, bg="#120e20", height=50)
+        header_frame = tk.Frame(self.chat_window, bg="#ffffff", height=50, highlightthickness=1, highlightbackground="#e2e8f0")
         header_frame.pack(fill="x", side="top")
 
-        title_lbl = tk.Label(header_frame, text=" ⚡ my_neo-agent Companion Studio", bg="#120e20", fg="#00f5d4", font=("Outfit", 12, "bold"))
+        title_lbl = tk.Label(header_frame, text=" ⚡ my_neo-agent Companion Studio", bg="#ffffff", fg="#0f172a", font=("Outfit", 12, "bold"))
         title_lbl.pack(side="left", padx=14, pady=10)
 
-        btn_settings = tk.Button(header_frame, text="⚙️ Mascots", bg="#221838", fg="#00f5d4", font=("Segoe UI", 9, "bold"), bd=0, command=self.open_mascot_settings)
+        btn_settings = tk.Button(header_frame, text="⚙️ Mascots", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 9, "bold"), bd=0, command=self.open_mascot_settings)
         btn_settings.pack(side="right", padx=(0, 10))
 
         curr_p = file_tools.get_workspace_root()
         disp_folder = os.path.basename(curr_p) or curr_p
-        folder_lbl = tk.Label(header_frame, text=f"📁 {disp_folder}", bg="#221838", fg="#00f5d4", font=("Consolas", 9, "bold"), padx=10, pady=3)
+        folder_lbl = tk.Label(header_frame, text=f"📁 {disp_folder}", bg="#f1f5f9", fg="#4f46e5", font=("Consolas", 9, "bold"), padx=10, pady=3)
         folder_lbl.pack(side="right", padx=6)
 
         # Tabbed Notebook Layout
@@ -461,24 +461,24 @@ class FloatingMascotApp:
         notebook.pack(fill="both", expand=True, padx=8, pady=8)
 
         # Tab 1: Chat Stream & Quick Prompts
-        chat_tab = tk.Frame(notebook, bg="#090710")
+        chat_tab = tk.Frame(notebook, bg="#f8fafc")
         notebook.add(chat_tab, text="💬 Live AI Chat")
 
-        chat_box = tk.Text(chat_tab, bg="#141020", fg="#ffffff", font=("Segoe UI", 10), wrap="word", highlightthickness=0, bd=0)
+        chat_box = tk.Text(chat_tab, bg="#ffffff", fg="#0f172a", font=("Segoe UI", 10), wrap="word", highlightthickness=1, highlightbackground="#e2e8f0", bd=0)
         chat_box.pack(fill="both", expand=True, padx=8, pady=8)
 
         # Tags formatting
-        chat_box.tag_config("user", foreground="#f72585", font=("Segoe UI", 10, "bold"))
-        chat_box.tag_config("assistant", foreground="#00f5d4", font=("Segoe UI", 10, "bold"))
-        chat_box.tag_config("system", foreground="#9d4edd", font=("Segoe UI", 10, "italic"))
-        chat_box.tag_config("plan", foreground="#00f5d4", font=("Consolas", 10, "bold"))
+        chat_box.tag_config("user", foreground="#4f46e5", font=("Segoe UI", 10, "bold"))
+        chat_box.tag_config("assistant", foreground="#0284c7", font=("Segoe UI", 10, "bold"))
+        chat_box.tag_config("system", foreground="#64748b", font=("Segoe UI", 10, "italic"))
+        chat_box.tag_config("plan", foreground="#0f172a", font=("Consolas", 10, "bold"))
         chat_box.tag_config("subagent", foreground="#10b981", font=("Segoe UI", 9, "bold"))
 
         chat_box.insert("end", "🤖 Neo Companion System Initialized.\n", "system")
         chat_box.insert("end", f"Active Workspace: '{curr_p}'\nDynamic DAG Planning & AST Auto-Correction Active!\n\n")
 
         # Quick Action Prompt Bar
-        quick_bar = tk.Frame(chat_tab, bg="#090710")
+        quick_bar = tk.Frame(chat_tab, bg="#f8fafc")
         quick_bar.pack(fill="x", padx=8, pady=(0, 4))
 
         def quick_prompt(text):
@@ -486,20 +486,20 @@ class FloatingMascotApp:
             entry.insert(0, text)
             send_msg()
 
-        btn_app = tk.Button(quick_bar, text="⚡ Build Web App", bg="#7b2cbf", fg="#ffffff", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: quick_prompt("Build a complete interactive Calculator web app with HTML, CSS, and JS"))
+        btn_app = tk.Button(quick_bar, text="⚡ Build Web App", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: quick_prompt("Build a complete interactive Calculator web app with HTML, CSS, and JS"))
         btn_app.pack(side="left", padx=(0, 4), ipady=3, ipadx=6)
 
-        btn_fix = tk.Button(quick_bar, text="🐞 Auto-Fix Errors", bg="#221838", fg="#00f5d4", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: self.trigger_folder_analysis())
+        btn_fix = tk.Button(quick_bar, text="🐞 Auto-Fix Errors", bg="#e2e8f0", fg="#0f172a", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: self.trigger_folder_analysis())
         btn_fix.pack(side="left", padx=(0, 4), ipady=3, ipadx=6)
 
-        btn_screen = tk.Button(quick_bar, text="👁️ Vision Debug", bg="#221838", fg="#00f5d4", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: self.trigger_screen_analysis())
+        btn_screen = tk.Button(quick_bar, text="👁️ Vision Debug", bg="#e2e8f0", fg="#0f172a", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: self.trigger_screen_analysis())
         btn_screen.pack(side="left", padx=(0, 4), ipady=3, ipadx=6)
 
-        btn_folder = tk.Button(quick_bar, text="📂 Open Folder", bg="#221838", fg="#e0aaff", font=("Segoe UI", 8, "bold"), bd=0, command=self.select_any_system_folder)
+        btn_folder = tk.Button(quick_bar, text="📂 Open Folder", bg="#e2e8f0", fg="#4f46e5", font=("Segoe UI", 8, "bold"), bd=0, command=self.select_any_system_folder)
         btn_folder.pack(side="left", padx=(0, 4), ipady=3, ipadx=6)
 
         # Input Frame
-        input_frame = tk.Frame(chat_tab, bg="#090710")
+        input_frame = tk.Frame(chat_tab, bg="#f8fafc")
         input_frame.pack(fill="x", padx=8, pady=(0, 8))
 
         # Image attachment state
@@ -507,10 +507,10 @@ class FloatingMascotApp:
         self.attached_image_name = ""
 
         # Attachment status row
-        attach_frame = tk.Frame(chat_tab, bg="#090710")
+        attach_frame = tk.Frame(chat_tab, bg="#f8fafc")
         attach_frame.pack(fill="x", padx=8, pady=(0, 2))
 
-        attach_label = tk.Label(attach_frame, text="", bg="#090710", fg="#00f5d4", font=("Segoe UI", 9, "bold"))
+        attach_label = tk.Label(attach_frame, text="", bg="#f8fafc", fg="#4f46e5", font=("Segoe UI", 9, "bold"))
         attach_label.pack(side="left")
 
         def select_image_file():
@@ -533,20 +533,20 @@ class FloatingMascotApp:
             self.attached_image_name = ""
             attach_label.config(text="")
 
-        btn_attach = tk.Button(input_frame, text="🖼️ Upload Image", bg="#221838", fg="#00f5d4", font=("Segoe UI", 9, "bold"), bd=0, command=select_image_file)
+        btn_attach = tk.Button(input_frame, text="🖼️ Upload Image", bg="#e2e8f0", fg="#4f46e5", font=("Segoe UI", 9, "bold"), bd=0, command=select_image_file)
         btn_attach.pack(side="left", padx=(0, 6), ipady=4, ipadx=8)
 
-        entry = tk.Entry(input_frame, bg="#221838", fg="#00f5d4", font=("Segoe UI", 11), insertbackground="#00f5d4", bd=0, highlightthickness=1, highlightbackground="#7b2cbf")
+        entry = tk.Entry(input_frame, bg="#ffffff", fg="#0f172a", font=("Segoe UI", 11), insertbackground="#4f46e5", bd=0, highlightthickness=1, highlightbackground="#cbd5e1")
         entry.pack(side="left", fill="x", expand=True, padx=(0, 6), ipady=6)
 
         # Tab 2: Dynamic Execution Plan & Sub-Agents DAG
-        plan_tab = tk.Frame(notebook, bg="#090710")
+        plan_tab = tk.Frame(notebook, bg="#f8fafc")
         notebook.add(plan_tab, text="🧠 Planning & Sub-Agents")
 
-        plan_hdr = tk.Label(plan_tab, text="🧠 Active Execution Plan DAG", bg="#090710", fg="#00f5d4", font=("Outfit", 11, "bold"))
+        plan_hdr = tk.Label(plan_tab, text="🧠 Active Execution Plan DAG", bg="#f8fafc", fg="#0f172a", font=("Outfit", 11, "bold"))
         plan_hdr.pack(anchor="w", padx=10, pady=(8, 2))
 
-        plan_txt = tk.Text(plan_tab, bg="#141020", fg="#00f5d4", font=("Consolas", 10), wrap="word", bd=0)
+        plan_txt = tk.Text(plan_tab, bg="#ffffff", fg="#0f172a", font=("Consolas", 10), wrap="word", highlightthickness=1, highlightbackground="#e2e8f0", bd=0)
         plan_txt.pack(fill="both", expand=True, padx=8, pady=8)
 
         def refresh_plan_view():
@@ -574,13 +574,13 @@ class FloatingMascotApp:
         refresh_plan_view()
 
         # Tab 3: Workspace Explorer & Viewer
-        ws_tab = tk.Frame(notebook, bg="#090710")
+        ws_tab = tk.Frame(notebook, bg="#f8fafc")
         notebook.add(ws_tab, text="📁 Workspace Files")
 
-        ws_bar = tk.Frame(ws_tab, bg="#120e20", pady=4, padx=8)
+        ws_bar = tk.Frame(ws_tab, bg="#ffffff", pady=4, padx=8, highlightthickness=1, highlightbackground="#e2e8f0")
         ws_bar.pack(fill="x", side="top")
 
-        lbl_ws_info = tk.Label(ws_bar, text="📁 Workspace Explorer", bg="#120e20", fg="#00f5d4", font=("Consolas", 10, "bold"))
+        lbl_ws_info = tk.Label(ws_bar, text="📁 Workspace Explorer", bg="#ffffff", fg="#0f172a", font=("Consolas", 10, "bold"))
         lbl_ws_info.pack(side="left")
 
         def open_file_dialog_viewer(filename):
@@ -594,19 +594,19 @@ class FloatingMascotApp:
             view_dlg.title(f"🐍 Viewing Python File: {filename}" if is_py else f"📄 Viewing File: {filename}")
             view_dlg.geometry("680x540")
             view_dlg.attributes("-topmost", True)
-            view_dlg.config(bg="#090710")
+            view_dlg.config(bg="#f8fafc")
 
-            lbl_header = tk.Label(view_dlg, text=f"{'🐍' if is_py else '📄'} {filename} ({res.get('lines', 0)} lines)", bg="#120e20", fg="#00f5d4", font=("Consolas", 11, "bold"), pady=8)
+            lbl_header = tk.Label(view_dlg, text=f"{'🐍' if is_py else '📄'} {filename} ({res.get('lines', 0)} lines)", bg="#ffffff", fg="#0f172a", font=("Consolas", 11, "bold"), pady=8)
             lbl_header.pack(fill="x", side="top")
 
-            txt_body = tk.Text(view_dlg, bg="#141020", fg="#00f5d4" if is_py else "#e0aaff", font=("Consolas", 10), wrap="none", bd=0)
+            txt_body = tk.Text(view_dlg, bg="#ffffff", fg="#0f172a", font=("Consolas", 10), wrap="none", highlightthickness=1, highlightbackground="#e2e8f0", bd=0)
             txt_body.pack(fill="both", expand=True, padx=8, pady=8)
             txt_body.insert("end", res.get("content", ""))
 
-            btn_close = tk.Button(view_dlg, text="Close Viewer", bg="#7b2cbf", fg="#ffffff", font=("Segoe UI", 10, "bold"), command=view_dlg.destroy)
+            btn_close = tk.Button(view_dlg, text="Close Viewer", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 10, "bold"), command=view_dlg.destroy)
             btn_close.pack(pady=(0, 8), ipadx=12)
 
-        ws_txt = tk.Text(ws_tab, bg="#141020", fg="#00f5d4", font=("Consolas", 9), wrap="word", bd=0)
+        ws_txt = tk.Text(ws_tab, bg="#ffffff", fg="#0f172a", font=("Consolas", 9), wrap="word", highlightthickness=1, highlightbackground="#e2e8f0", bd=0)
         ws_txt.pack(fill="both", expand=True, padx=8, pady=8)
 
         def refresh_ws_view():
@@ -624,7 +624,7 @@ class FloatingMascotApp:
                     icon = "📄"
                 ws_txt.insert("end", f"{icon} {item['name']}\n")
 
-        btn_refresh_ws = tk.Button(ws_bar, text="🔄 Refresh Files", bg="#7b2cbf", fg="#ffffff", font=("Segoe UI", 9, "bold"), command=refresh_ws_view)
+        btn_refresh_ws = tk.Button(ws_bar, text="🔄 Refresh Files", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 9, "bold"), command=refresh_ws_view)
         btn_refresh_ws.pack(side="right")
 
         def on_file_click(event):
