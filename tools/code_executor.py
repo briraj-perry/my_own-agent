@@ -38,6 +38,46 @@ def validate_python_syntax(code_string: str) -> Dict[str, Any]:
     except Exception as e:
         return {"valid": False, "error": f"AST Parse Error: {str(e)}", "line": None}
 
+def validate_code_syntax(code_string: str, file_ext: str = ".py") -> Dict[str, Any]:
+    """Multi-language AST & Syntax validation engine (Python, JS, JSON, HTML)."""
+    ext = file_ext.lower().strip()
+    if ext in {".py", ".pyw"}:
+        return validate_python_syntax(code_string)
+    elif ext in {".json"}:
+        try:
+            import json
+            json.loads(code_string)
+            return {"valid": True, "error": None, "line": None}
+        except json.JSONDecodeError as jde:
+            return {"valid": False, "error": f"JSONDecodeError: {jde.msg} at line {jde.lineno}, col {jde.colno}", "line": jde.lineno}
+    elif ext in {".html"}:
+        try:
+            from html.parser import HTMLParser
+            class SimpleHTMLValidator(HTMLParser):
+                pass
+            parser = SimpleHTMLValidator()
+            parser.feed(code_string)
+            return {"valid": True, "error": None, "line": None}
+        except Exception as e:
+            return {"valid": False, "error": f"HTML Syntax Warning: {str(e)}", "line": None}
+    elif ext in {".js", ".jsx"}:
+        # Use node --check if node.exe is installed on machine, or fall back to basic brace checking
+        try:
+            res = subprocess.run(["node", "--check", "-"], input=code_string, capture_output=True, text=True, timeout=5)
+            if res.returncode == 0:
+                return {"valid": True, "error": None, "line": None}
+            else:
+                return {"valid": False, "error": f"JS SyntaxError: {res.stderr.strip()}", "line": None}
+        except Exception:
+            # Fallback syntax brace balance check
+            open_braces = code_string.count("{") - code_string.count("}")
+            open_parens = code_string.count("(") - code_string.count(")")
+            if open_braces != 0 or open_parens != 0:
+                return {"valid": False, "error": f"JS Unbalanced syntax brackets (braces: {open_braces}, parens: {open_parens})", "line": None}
+            return {"valid": True, "error": None, "line": None}
+
+    return {"valid": True, "error": None, "line": None}
+
 
 
 def execute_code(

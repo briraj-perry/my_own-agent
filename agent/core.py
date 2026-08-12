@@ -43,7 +43,6 @@ def extract_multi_file_blocks(text: str) -> Dict[str, str]:
     followed by a fenced code block.
     """
     files: Dict[str, str] = {}
-    # Pattern: header line with filename, then a fenced code block
     pattern = re.compile(
         r'(?:###\s*FILE:\s*|---\s*FILE:\s*)'
         r'([a-zA-Z0-9_\-\/\\.]+\.(?:html|css|js|json|py|md))'
@@ -58,6 +57,32 @@ def extract_multi_file_blocks(text: str) -> Dict[str, str]:
         content = match.group(2).strip()
         files[filename] = content
     return files
+
+
+def extract_file_patches(text: str) -> List[Dict[str, str]]:
+    """Parses Cursor-style surgical file patch blocks from LLM response into list of patches:
+    
+    Format:
+      ### PATCH_FILE: filename.ext
+      <<<< SEARCH
+      target original snippet
+      ==== REPLACE >>>>
+      new replacement snippet
+      <<<< END PATCH >>>>
+    """
+    patches = []
+    pattern = re.compile(
+        r'###\s*PATCH_FILE:\s*([a-zA-Z0-9_\-\/\\.]+\.[a-zA-Z0-9]+)\s*\n'
+        r'<<<<\s*SEARCH\s*\n(.*?)\n====\s*REPLACE\s*>>>>\s*\n(.*?)(?:\n<<<<\s*END\s*PATCH\s*>>>>|\n(?=###)|$)',
+        re.DOTALL | re.IGNORECASE
+    )
+    for match in pattern.finditer(text):
+        patches.append({
+            "file": match.group(1).strip(),
+            "target": match.group(2),
+            "replacement": match.group(3)
+        })
+    return patches
 
 
 def is_web_intent(query: str) -> bool:
@@ -927,21 +952,22 @@ class NeoAgentCore:
                 + "\n".join(folder_code_snippets)
             )
 
+        ast_symbol_summary = self.indexer.get_workspace_symbol_summary(max_symbols=30)
+        ast_symbol_context = f"\n\n[CURSOR-STYLE AST WORKSPACE SYMBOL INDEX]:\n{ast_symbol_summary}\n" if ast_symbol_summary else ""
+
         system_prompt = (
-            "You are Neo, a local AI Personal Agent for coding and general knowledge running locally on the user's computer.\n\n"
-            "CRITICAL DIRECTIVE: DO NOT ask the user to provide code, paste text, or show file contents! You ALREADY have the full contents of targeted files in context below.\n"
-            "CRITICAL ACTION RULE: Immediately generate, expand, or fix the requested code directly inside standard markdown code blocks (```python ... ``` or ```js ... ``` or ```html ... ```).\n"
-            "CRITICAL OUTPUT RULE: Be extremely CONCISE, crisp, and direct. Do NOT output long unnecessary speeches or multi-page fluff.\n"
-            "CRITICAL PERMISSION RULE: DO NOT write text questions asking for permission in the chat. Interactive buttons are automatically rendered in the user interface.\n\n"
+            "You are Neo, an advanced local AI Agent powered by Cursor-style codebase indexing and ChatGPT Codex capabilities.\n\n"
+            "CRITICAL DIRECTIVE: DO NOT ask the user to provide code or file contents! You ALREADY have targeted files and AST symbols in context below.\n"
+            "CRITICAL ACTION RULE: Immediately generate code via full files (### FILE: filename) or surgical patches (### PATCH_FILE: filename).\n"
+            "CRITICAL OUTPUT RULE: Be extremely CONCISE, crisp, and direct.\n\n"
             "AVAILABLE TOOLS:\n"
-            "- FOLDER CREATION: Can create single or nested folders via create_directory(path).\n"
-            "- FILE WRITING: Can write source code and Python (.py) files via write_file(path, content).\n"
-            "- NOTE WRITING: Can create Markdown notes via write_note(title, content).\n"
-            "- FILE READING: Can read files via read_file(path).\n"
+            "- SURGICAL FILE PATCHING: Patch target snippets via ### PATCH_FILE: filename.\n"
+            "- FULL FILE WRITING: Write full files via write_file(path, content).\n"
+            "- FOLDER CREATION: Can create folders via create_directory(path).\n"
             "- CODE EXECUTION: Can execute python/powershell scripts via execute_code(code).\n"
-            "- DIRECT FOLDER ANALYSIS & AUTO-FIX: Reads and fixes Python source code files in target folder directly.\n"
             "- SUB-AGENT SPAWNING: Spawns specialized sub-agents for complex apps.\n"
             + folder_code_context
+            + ast_symbol_context
             + screen_context
         )
 
@@ -1017,8 +1043,29 @@ class NeoAgentCore:
             # Check if response contains code block OR user had writing intent
             has_code_block = "```" in full_streamed_response
 
+            # --- Cursor-style Surgical Patch Extraction ---
+            patches = extract_file_patches(full_streamed_response)
+            if patches and permission_approved:
+                patched_files = []
+                for p in patches:
+                    p_res = file_tools.patch_file(p["file"], p["target"], p["replacement"], folder=target_folder)
+                    if p_res.get("status") == "success":
+                        patched_files.append(p["file"])
+                        yield {
+                            "type": "execution_log",
+                            "mascot_state": "executing",
+                            "command": f"cursor_patch_file('{p['file']}')",
+                            "output": f"✓ {p_res.get('message')}"
+                        }
+                if patched_files:
+                    self.indexer.reindex()
+                    yield {
+                        "type": "token",
+                        "content": f"\n\n⚡ **Surgically Patched Files**: {', '.join(f'`{pf}`' for pf in patched_files)}\n"
+                    }
+
             # --- Multi-file web app extraction ---
-            if _is_web_request and has_code_block and permission_approved:
+            elif _is_web_request and has_code_block and permission_approved:
                 multi_files = extract_multi_file_blocks(full_streamed_response)
                 if multi_files:
                     written_files = []
