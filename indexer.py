@@ -1,20 +1,29 @@
 import os
 import glob
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+from tools import file_tools
 
 class CodebaseIndexer:
-    """Manages workspace file indexing, tree generation, and metadata."""
+    """Manages workspace file indexing, tree generation, and metadata for ANY directory on disk."""
     
     EXCLUDE_DIRS = {".git", "__pycache__", "node_modules", ".venv", "venv", ".chromadb", ".idea", ".vscode"}
-    ALLOWED_EXTENSIONS = {".py", ".js", ".html", ".css", ".json", ".md", ".txt", ".sh", ".ps1", ".yml", ".yaml"}
+    ALLOWED_EXTENSIONS = {".py", ".js", ".html", ".css", ".json", ".md", ".txt", ".sh", ".ps1", ".yml", ".yaml", ".cpp", ".c", ".h", ".cs", ".java"}
 
-    def __init__(self, root_dir: str = "."):
-        self.root_dir = os.path.abspath(root_dir)
+    def __init__(self, root_dir: Optional[str] = None):
+        self.root_dir = os.path.abspath(root_dir) if root_dir else file_tools.get_workspace_root()
         self.indexed_files: List[Dict[str, Any]] = []
         self.is_indexed = False
 
+    def update_root_dir(self, new_root: str):
+        """Updates indexer root directory to point to ANY system folder."""
+        file_tools.set_workspace_root(new_root)
+        self.root_dir = os.path.abspath(new_root)
+        self.is_indexed = False
+        return self.scan_files()
+
     def scan_files(self) -> List[Dict[str, Any]]:
         """Scans the directory structure and extracts basic stats."""
+        self.root_dir = file_tools.get_workspace_root()
         files_info = []
         for root, dirs, files in os.walk(self.root_dir):
             # Prune excluded directories
@@ -22,7 +31,7 @@ class CodebaseIndexer:
             
             for file in files:
                 ext = os.path.splitext(file)[1].lower()
-                if ext in self.ALLOWED_EXTENSIONS or file in {"requirements.txt", "Dockerfile"}:
+                if ext in self.ALLOWED_EXTENSIONS or file in {"requirements.txt", "Dockerfile", "package.json"}:
                     full_path = os.path.join(root, file)
                     rel_path = os.path.relpath(full_path, self.root_dir)
                     try:
@@ -45,9 +54,9 @@ class CodebaseIndexer:
         self.is_indexed = True
         return files_info
 
-    def get_file_tree(self) -> List[Dict[str, Any]]:
+    def get_file_tree(self, force_refresh: bool = True) -> List[Dict[str, Any]]:
         """Generates a nested tree representation for UI navigation."""
-        if not self.is_indexed:
+        if force_refresh or not self.is_indexed:
             self.scan_files()
 
         tree = []
@@ -83,8 +92,9 @@ class CodebaseIndexer:
         total_size = sum(f["size"] for f in files)
         return {
             "status": "success",
+            "workspace_root": self.root_dir,
             "file_count": len(files),
             "total_lines": total_lines,
             "total_bytes": total_size,
-            "message": f"Successfully indexed {len(files)} files ({total_lines} lines of code)."
+            "message": f"Successfully indexed {len(files)} files ({total_lines} lines of code) in '{self.root_dir}'."
         }

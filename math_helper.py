@@ -1,0 +1,1 @@
+mkdir -p d:/learning/school_projects/tests

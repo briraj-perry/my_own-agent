@@ -9,6 +9,7 @@ import sys
 import tempfile
 import subprocess
 import time
+import ast
 from typing import Dict, Any, Optional
 
 try:
@@ -16,6 +17,27 @@ try:
 except ImportError:
     def tool(func):
         return func
+
+
+def validate_python_syntax(code_string: str) -> Dict[str, Any]:
+    """Validates Python code syntax using ast.parse().
+
+    Returns:
+        Dict with 'valid': bool, 'error': str (if invalid), 'line': int (if invalid).
+    """
+    try:
+        ast.parse(code_string)
+        return {"valid": True, "error": None, "line": None}
+    except SyntaxError as se:
+        return {
+            "valid": False,
+            "error": f"SyntaxError: {se.msg} at line {se.lineno}, col {se.offset}",
+            "line": se.lineno,
+            "text": se.text
+        }
+    except Exception as e:
+        return {"valid": False, "error": f"AST Parse Error: {str(e)}", "line": None}
+
 
 
 def execute_code(

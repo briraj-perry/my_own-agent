@@ -2,6 +2,7 @@
 
 import os
 import sys
+import asyncio
 from pathlib import Path
 
 # Ensure root workspace directory is on sys.path
@@ -18,6 +19,7 @@ from agent.state import AgentState, create_initial_state
 from agent.prompts import get_system_prompt, CODING_SYSTEM_PROMPT
 from agent.nodes import check_permission, execute_tools, self_correct_eval
 from agent.graph import build_agent_graph, should_continue_after_model, route_permission_check, route_after_tool_execution
+from agent.core import NeoAgentCore
 
 
 class TestAgentCore(unittest.TestCase):
@@ -44,10 +46,10 @@ class TestAgentCore(unittest.TestCase):
     def test_system_prompt_builder(self):
         """Test system prompt selection."""
         prompt = get_system_prompt("coding")
-        self.assertIn("expert autonomous software engineer", prompt)
+        self.assertIn("advanced local AI Coding Agent", prompt)
 
         gen_prompt = get_system_prompt("general")
-        self.assertIn("knowledgeable, helpful", gen_prompt)
+        self.assertIn("highly knowledgeable local AI assistant", gen_prompt)
 
     def test_permission_check_node(self):
         """Test check_permission node requiring approval for destructive tools."""
@@ -172,6 +174,35 @@ class TestAgentCore(unittest.TestCase):
         checkpointer = get_memory_checkpointer()
         graph = build_agent_graph(checkpointer=checkpointer)
         self.assertIsNotNone(graph)
+
+    def test_coordinated_team_dependency_order_and_offline_safety(self):
+        """Large-task specialists expose dependencies and do not write when Ollama is offline."""
+        core = NeoAgentCore()
+        team = core._build_coordinated_team("Build a complete web application")
+        self.assertEqual(
+            [(agent.id, agent.dependencies) for agent in team],
+            [
+                ("architecture", []),
+                ("interface", ["architecture"]),
+                ("implementation", ["architecture", "interface"]),
+                ("quality", ["interface", "implementation"]),
+            ],
+        )
+
+        core.is_ollama_running = lambda: False
+
+        async def collect_events():
+            return [
+                event async for event in core._run_coordinated_team(
+                    "Build a complete web application", ".", "test-model"
+                )
+            ]
+
+        events = asyncio.run(collect_events())
+        self.assertEqual(events[0]["type"], "coordination_update")
+        updates = [event for event in events if event["type"] == "sub_agent_update"]
+        self.assertEqual(len(updates), 4)
+        self.assertTrue(all(event["sub_agent"]["status"] == "failed" for event in updates))
 
 
 if __name__ == "__main__":
