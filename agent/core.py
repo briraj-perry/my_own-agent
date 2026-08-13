@@ -1160,8 +1160,9 @@ class NeoAgentCore:
                 messages_payload.extend(self.chat_history[-4:])
             messages_payload.append(user_message_obj)
 
-        _ctx_size = 8192 if _is_web_request else 4096
-        _predict_size = 4096 if _is_web_request else 2048
+        _ctx_size = 16384 if _is_web_request else 8192
+        _predict_size = 8192 if _is_web_request else 4096
+
 
         chat_payload = {
             "model": target_llm_model,
