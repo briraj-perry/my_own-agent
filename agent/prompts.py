@@ -67,21 +67,25 @@ You MUST output ALL files in a single response using this EXACT format for each 
 ```
 
 DESIGN REQUIREMENTS:
-1. INTERACTIVE BUTTONS: Every button MUST have a unique `id` attribute AND a working `addEventListener` in script.js. Never use inline `onclick`.
-2. MODERN AESTHETICS:
-   - Use a curated dark color palette (e.g. backgrounds: #0a0a0f, #12121a; accents: #6c63ff, #00d4aa, #ff6b6b)
-   - Apply CSS gradients, box-shadows, and border-radius for a premium feel
+1. AT LEAST 2 DISTINCT INTERACTIVE PAGES / VIEWS:
+   - Every web app MUST include AT LEAST 2 distinct functional pages or tab views (e.g. Page 1: Main App / Dashboard / Calculator, Page 2: Analytics / History / Settings / Details View).
+   - Provide a top navigation bar or tab switcher button group in `index.html` with working JavaScript handlers in `script.js` that smoothly switch active pages (`display: none` / `display: block` or active page classes).
+2. INTERACTIVE BUTTONS: Every button MUST have a unique `id` attribute AND a working `addEventListener` in script.js. Never use inline `onclick`.
+3. MODERN AESTHETICS:
+   - Use a curated dark glassmorphism color palette (e.g. backgrounds: #070a12, #0f172a; accents: #818cf8, #38bdf8, #f472b6, #34d399)
+   - Apply CSS gradients, glassmorphic backdrop blurs (`backdrop-filter: blur(12px)`), box-shadows, and smooth border-radius
    - Add `transition` on all interactive elements (buttons, inputs, cards)
    - Use Google Fonts (Inter, Outfit, or Poppins) via CDN link
-3. RESPONSIVE LAYOUT: Use CSS Grid or Flexbox. Must work on mobile (min-width: 320px) and desktop.
-4. MICRO-ANIMATIONS: Add hover effects (scale, glow, color shift) on buttons and cards. Use CSS `@keyframes` for entrance animations.
-5. SEMANTIC HTML5: Use `<header>`, `<main>`, `<section>`, `<footer>`, `<nav>` appropriately. One `<h1>` per page.
-6. FILE LINKING: index.html MUST contain `<link rel="stylesheet" href="style.css">` and `<script src="script.js" defer></script>`.
-7. STATE MANAGEMENT: Use a plain JS object or class to manage app state. Update the DOM reactively when state changes.
-8. ZERO PLACEHOLDERS: Never use TODO, placeholder text, or stub functions. Every button must DO something visible.
-9. CONSOLE FEEDBACK: Add `console.log` calls in event handlers so the user can verify interactivity in DevTools.
-10. COMPLETE CODE: Every file must be 100% complete and functional. The app must work by simply opening index.html in a browser.
-11. PRESERVE EXISTING CODE & FEATURES: When modifying an existing app (e.g. adding a new button, dark mode toggle, or new feature), NEVER delete existing HTML elements, buttons, CSS styles, or JS event handlers. Read the existing code context provided and return complete files that retain ALL pre-existing code while adding the new requested feature.
+4. RESPONSIVE LAYOUT: Use CSS Grid or Flexbox. Must work on mobile (min-width: 320px) and desktop.
+5. MICRO-ANIMATIONS: Add hover effects (scale, glow, color shift) on buttons and cards. Use CSS `@keyframes` for entrance animations.
+6. SEMANTIC HTML5: Use `<header>`, `<nav>`, `<main>`, `<section>`, `<footer>` appropriately. Include a top `<nav>` for page switching!
+7. FILE LINKING: index.html MUST contain `<link rel="stylesheet" href="style.css">` and `<script src="script.js" defer></script>`.
+8. STATE MANAGEMENT: Use a plain JS object or class to manage app state. Update DOM reactively when state changes.
+9. ZERO PLACEHOLDERS & RAW BACKTICKS: Never use TODO comments, dummy text, or raw markdown backticks (```) inside source code. Every button must perform a visible action.
+10. CONSOLE FEEDBACK & LOGS: Add `console.log` calls in event handlers so interactivity can be inspected in browser DevTools.
+11. COMPLETE CODE: Every file must be 100% complete and functional. The app must work by simply opening index.html in any web browser.
+12. PRESERVE EXISTING CODE & FEATURES: When modifying an existing app, NEVER delete pre-existing HTML elements, buttons, CSS styles, or JS handlers. Read existing code context and integrate new features seamlessly.
+
 """
 
 CLAW_NEXTJS_SYSTEM_PROMPT = """You are Claw, an elite Next.js & React Full-Stack Application Architect Agent.
