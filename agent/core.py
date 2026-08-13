@@ -1211,7 +1211,7 @@ class NeoAgentCore:
             # Check if response contains code block OR user had writing intent
             has_code_block = "```" in full_streamed_response
 
-            # --- Cursor-style Surgical Patch Extraction ---
+            # 1. --- Cursor-style Surgical Patch Extraction ---
             patches = extract_file_patches(full_streamed_response)
             if patches and permission_approved:
                 patched_files = []
@@ -1232,50 +1232,37 @@ class NeoAgentCore:
                         "content": f"\n\n⚡ **Surgically Patched Files**: {', '.join(f'`{pf}`' for pf in patched_files)}\n"
                     }
 
-            # --- Multi-file web app extraction ---
-            elif _is_web_request and has_code_block and permission_approved:
-                multi_files = extract_multi_file_blocks(full_streamed_response)
-                if multi_files:
-                    written_files = []
-                    for mf_name, mf_content in multi_files.items():
-                        mf_res = file_tools.write_file(mf_name, mf_content, folder=target_folder)
-                        if mf_res.get("status") == "success":
-                            written_files.append(mf_name)
-                            yield {
-                                "type": "execution_log",
-                                "mascot_state": "executing",
-                                "command": f"physical_disk_write('{mf_res.get('path')}')",
-                                "output": f"✓ {mf_res.get('message')}\nFull Path: {mf_res.get('full_path')}"
-                            }
-                    if written_files:
-                        self.indexer.reindex()
-                        report = self.analyze_and_verify_web_app(target_folder, written_files)
-                        file_list_str = ", ".join(f"`{wf}`" for wf in written_files)
+            # 2. --- Multi-file Extraction (HTML, CSS, JS, Python, etc.) ---
+            multi_files = extract_multi_file_blocks(full_streamed_response)
+            if multi_files and permission_approved:
+                written_files = []
+                for mf_name, mf_content in multi_files.items():
+                    mf_res = file_tools.write_file(mf_name, mf_content, folder=target_folder)
+                    if mf_res.get("status") == "success":
+                        written_files.append(mf_name)
                         yield {
                             "type": "execution_log",
-                            "mascot_state": "ast_check",
-                            "command": "analyze_and_verify_web_app()",
-                            "output": f"🧪 Code Verification Complete: {report['pages_found']}+ Interactive Pages/Views verified, 0 raw backticks, 100% clean HTML/CSS/JS."
+                            "mascot_state": "executing",
+                            "command": f"physical_disk_write('{mf_res.get('path')}')",
+                            "output": f"✓ {mf_res.get('message')}\nFull Path: {mf_res.get('full_path')}"
                         }
-                        yield {
-                            "type": "token",
-                            "content": f"\n\n🌐 **Interactive Web App Verified & Written to Disk!** {len(written_files)} files: {file_list_str}\n🧪 **Code Analysis**: {report['pages_found']}+ Interactive Pages/Views verified cleanly!\nFolder: `{target_folder}`\n"
-                        }
+                if written_files:
+                    self.indexer.reindex()
+                    report = self.analyze_and_verify_web_app(target_folder, written_files)
+                    file_list_str = ", ".join(f"`{wf}`" for wf in written_files)
+                    yield {
+                        "type": "execution_log",
+                        "mascot_state": "ast_check",
+                        "command": "analyze_and_verify_web_app()",
+                        "output": f"🧪 Code Verification Complete: {len(written_files)} files written to disk, {report['pages_found']}+ Interactive Pages/Views verified."
+                    }
+                    yield {
+                        "type": "token",
+                        "content": f"\n\n🌐 **Application Files Created & Written to Disk!** {len(written_files)} files: {file_list_str}\nFolder: `{target_folder}`\n"
+                    }
 
-                else:
-                    # Fallback: single-file extraction for web requests
-                    extracted_code = extract_code_block(full_streamed_response)
-                    save_filename = "index.html"
-                    res = file_tools.write_file(save_filename, extracted_code, folder=target_folder)
-                    if res.get("status") == "success":
-                        self.indexer.reindex()
-                        yield {
-                            "type": "token",
-                            "content": f"\n\n🌐 **Web File Written to Disk**: `{res.get('path')}` ({res.get('lines')} lines)\nFull Path: `{res.get('full_path')}`\n"
-                        }
-
-            # --- Standard single-file extraction (non-web) ---
-            elif (has_writing_intent or has_code_block) and permission_approved:
+            # 3. --- Standard Single-File Extraction Fallback ---
+            elif (has_writing_intent or has_code_block or _is_web_request) and permission_approved:
                 extracted_code = extract_code_block(full_streamed_response)
                 
                 # Determine target filename
@@ -1291,7 +1278,23 @@ class NeoAgentCore:
                     elif "def " in extracted_code or "import " in extracted_code or "print(" in extracted_code or "python" in full_streamed_response.lower():
                         save_filename = py_names[0] if py_names else "script.py"
                     else:
-                        save_filename = "script.py"
+                        save_filename = "index.html" if _is_web_request else "script.py"
+
+                if extracted_code and len(extracted_code) > 10:
+                    res = file_tools.write_file(save_filename, extracted_code, folder=target_folder)
+                    if res.get("status") == "success":
+                        self.indexer.reindex()
+                        yield {
+                            "type": "execution_log",
+                            "mascot_state": "executing",
+                            "command": f"physical_disk_write('{res.get('path')}')",
+                            "output": f"✓ {res.get('message')}\nFull Path: {res.get('full_path')}"
+                        }
+                        yield {
+                            "type": "token",
+                            "content": f"\n\n📄 **File Created & Written to Disk**: `{res.get('path')}` ({res.get('lines')} lines)\nFull Path: `{res.get('full_path')}`\n"
+                        }
+
 
                 # AST Syntax Validation for Python files
                 if save_filename.endswith(".py") or save_filename.endswith(".pyw"):
