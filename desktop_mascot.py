@@ -519,56 +519,56 @@ class FloatingMascotApp:
             return
 
         self.chat_window = tk.Toplevel(self.root)
-        self.chat_window.title("my_neo-agent Companion Studio")
-        self.chat_window.geometry("680x740")
+        self.chat_window.title("my_neo-agent Companion Studio v2.0")
+        self.chat_window.geometry("720x780")
         self.chat_window.attributes("-topmost", True)
-        self.chat_window.config(bg="#f8fafc")
+        self.chat_window.config(bg="#090d16")
 
-        # Apply ttk Professional Light Theme Styles
+        # Apply ttk Professional Dark Theme Styles
         style = ttk.Style()
         style.theme_use('default')
-        style.configure('TNotebook', background='#f8fafc', borderwidth=0)
-        style.configure('TNotebook.Tab', background='#e2e8f0', foreground='#475569', padding=[16, 9], font=('Segoe UI', 10, 'bold'))
+        style.configure('TNotebook', background='#090d16', borderwidth=0)
+        style.configure('TNotebook.Tab', background='#1e293b', foreground='#94a3b8', padding=[18, 9], font=('Segoe UI', 10, 'bold'))
         style.map('TNotebook.Tab', background=[('selected', '#4f46e5')], foreground=[('selected', '#ffffff')])
 
         # Top Header Bar
-        header_frame = tk.Frame(self.chat_window, bg="#ffffff", height=50, highlightthickness=1, highlightbackground="#e2e8f0")
+        header_frame = tk.Frame(self.chat_window, bg="#0f172a", height=54, highlightthickness=1, highlightbackground="rgba(255, 255, 255, 0.1)")
         header_frame.pack(fill="x", side="top")
 
-        title_lbl = tk.Label(header_frame, text=" ⚡ my_neo-agent Companion Studio", bg="#ffffff", fg="#0f172a", font=("Outfit", 12, "bold"))
+        title_lbl = tk.Label(header_frame, text=" ⚡ my_neo-agent Companion Studio", bg="#0f172a", fg="#f8fafc", font=("Outfit", 13, "bold"))
         title_lbl.pack(side="left", padx=14, pady=10)
 
         btn_settings = tk.Button(header_frame, text="⚙️ Mascots", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 9, "bold"), bd=0, command=self.open_mascot_settings)
-        btn_settings.pack(side="right", padx=(0, 10))
+        btn_settings.pack(side="right", padx=(0, 12))
 
         curr_p = file_tools.get_workspace_root()
         disp_folder = os.path.basename(curr_p) or curr_p
-        folder_lbl = tk.Label(header_frame, text=f"📁 {disp_folder}", bg="#f1f5f9", fg="#4f46e5", font=("Consolas", 9, "bold"), padx=10, pady=3)
+        folder_lbl = tk.Label(header_frame, text=f"📁 {disp_folder}", bg="rgba(56, 189, 248, 0.15)", fg="#38bdf8", font=("Consolas", 9, "bold"), padx=12, pady=4)
         folder_lbl.pack(side="right", padx=6)
 
         # Tabbed Notebook Layout
         notebook = ttk.Notebook(self.chat_window)
-        notebook.pack(fill="both", expand=True, padx=8, pady=8)
+        notebook.pack(fill="both", expand=True, padx=10, pady=10)
 
         # Tab 1: Chat Stream & Quick Prompts
-        chat_tab = tk.Frame(notebook, bg="#f8fafc")
+        chat_tab = tk.Frame(notebook, bg="#090d16")
         notebook.add(chat_tab, text="💬 Live AI Chat")
 
-        chat_box = tk.Text(chat_tab, bg="#ffffff", fg="#0f172a", font=("Segoe UI", 10), wrap="word", highlightthickness=1, highlightbackground="#e2e8f0", bd=0)
+        chat_box = tk.Text(chat_tab, bg="#030712", fg="#cbd5e1", font=("Segoe UI", 10), wrap="word", highlightthickness=1, highlightbackground="rgba(255, 255, 255, 0.1)", bd=0)
         chat_box.pack(fill="both", expand=True, padx=8, pady=8)
 
-        # Tags formatting
-        chat_box.tag_config("user", foreground="#4f46e5", font=("Segoe UI", 10, "bold"))
-        chat_box.tag_config("assistant", foreground="#0284c7", font=("Segoe UI", 10, "bold"))
-        chat_box.tag_config("system", foreground="#64748b", font=("Segoe UI", 10, "italic"))
-        chat_box.tag_config("plan", foreground="#0f172a", font=("Consolas", 10, "bold"))
-        chat_box.tag_config("subagent", foreground="#10b981", font=("Segoe UI", 9, "bold"))
+        # Tags formatting for sleek dark theme
+        chat_box.tag_config("user", foreground="#818cf8", font=("Segoe UI", 10, "bold"))
+        chat_box.tag_config("assistant", foreground="#38bdf8", font=("Segoe UI", 10, "bold"))
+        chat_box.tag_config("system", foreground="#94a3b8", font=("Segoe UI", 10, "italic"))
+        chat_box.tag_config("plan", foreground="#c084fc", font=("Consolas", 10, "bold"))
+        chat_box.tag_config("subagent", foreground="#34d399", font=("Segoe UI", 9, "bold"))
 
-        chat_box.insert("end", "🤖 Neo Companion System Initialized.\n", "system")
+        chat_box.insert("end", "🤖 Neo Mascot Companion Studio v2.0 Initialized.\n", "system")
         chat_box.insert("end", f"Active Workspace: '{curr_p}'\nDynamic DAG Planning & AST Auto-Correction Active!\n\n")
 
         # Quick Action Prompt Bar
-        quick_bar = tk.Frame(chat_tab, bg="#f8fafc")
+        quick_bar = tk.Frame(chat_tab, bg="#090d16")
         quick_bar.pack(fill="x", padx=8, pady=(0, 4))
 
         def quick_prompt(text):
@@ -576,32 +576,35 @@ class FloatingMascotApp:
             entry.insert(0, text)
             send_msg()
 
-        btn_app = tk.Button(quick_bar, text="⚡ Build Web App", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: quick_prompt("Build a complete interactive Calculator web app with HTML, CSS, and JS"))
-        btn_app.pack(side="left", padx=(0, 4), ipady=3, ipadx=6)
+        btn_nextjs = tk.Button(quick_bar, text="🚀 Next.js App", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: quick_prompt("Build a complete interactive Next.js application"))
+        btn_nextjs.pack(side="left", padx=(0, 4), ipady=4, ipadx=8)
 
-        btn_fix = tk.Button(quick_bar, text="🐞 Auto-Fix Errors", bg="#e2e8f0", fg="#0f172a", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: self.trigger_folder_analysis())
-        btn_fix.pack(side="left", padx=(0, 4), ipady=3, ipadx=6)
+        btn_app = tk.Button(quick_bar, text="⚡ HTML App", bg="#1e293b", fg="#cbd5e1", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: quick_prompt("Build a complete interactive Calculator web app with HTML, CSS, and JS"))
+        btn_app.pack(side="left", padx=(0, 4), ipady=4, ipadx=8)
 
-        btn_screen = tk.Button(quick_bar, text="👁️ Vision Debug", bg="#e2e8f0", fg="#0f172a", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: self.trigger_screen_analysis())
-        btn_screen.pack(side="left", padx=(0, 4), ipady=3, ipadx=6)
+        btn_fix = tk.Button(quick_bar, text="🐞 Auto-Fix", bg="#1e293b", fg="#cbd5e1", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: self.trigger_folder_analysis())
+        btn_fix.pack(side="left", padx=(0, 4), ipady=4, ipadx=8)
 
-        btn_folder = tk.Button(quick_bar, text="📂 Open Folder", bg="#e2e8f0", fg="#4f46e5", font=("Segoe UI", 8, "bold"), bd=0, command=self.select_any_system_folder)
-        btn_folder.pack(side="left", padx=(0, 4), ipady=3, ipadx=6)
+        btn_screen = tk.Button(quick_bar, text="👁️ Vision Debug", bg="#1e293b", fg="#cbd5e1", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: self.trigger_screen_analysis())
+        btn_screen.pack(side="left", padx=(0, 4), ipady=4, ipadx=8)
+
+        btn_folder = tk.Button(quick_bar, text="📂 Open Folder", bg="#1e293b", fg="#38bdf8", font=("Segoe UI", 8, "bold"), bd=0, command=self.select_any_system_folder)
+        btn_folder.pack(side="left", padx=(0, 4), ipady=4, ipadx=8)
+
+        # Attachment status row
+        attach_frame = tk.Frame(chat_tab, bg="#090d16")
+        attach_frame.pack(fill="x", padx=8, pady=(0, 2))
+
+        attach_label = tk.Label(attach_frame, text="", bg="#090d16", fg="#a5b4fc", font=("Segoe UI", 9, "bold"))
+        attach_label.pack(side="left")
 
         # Input Frame
-        input_frame = tk.Frame(chat_tab, bg="#f8fafc")
+        input_frame = tk.Frame(chat_tab, bg="#090d16")
         input_frame.pack(fill="x", padx=8, pady=(0, 8))
 
         # Image attachment state
         self.attached_image_b64 = None
         self.attached_image_name = ""
-
-        # Attachment status row
-        attach_frame = tk.Frame(chat_tab, bg="#f8fafc")
-        attach_frame.pack(fill="x", padx=8, pady=(0, 2))
-
-        attach_label = tk.Label(attach_frame, text="", bg="#f8fafc", fg="#4f46e5", font=("Segoe UI", 9, "bold"))
-        attach_label.pack(side="left")
 
         def select_image_file():
             file_path = filedialog.askopenfilename(
@@ -623,21 +626,22 @@ class FloatingMascotApp:
             self.attached_image_name = ""
             attach_label.config(text="")
 
-        btn_attach = tk.Button(input_frame, text="🖼️ Upload Image", bg="#e2e8f0", fg="#4f46e5", font=("Segoe UI", 9, "bold"), bd=0, command=select_image_file)
-        btn_attach.pack(side="left", padx=(0, 6), ipady=4, ipadx=8)
+        btn_attach = tk.Button(input_frame, text="🖼️ Image", bg="#1e293b", fg="#a5b4fc", font=("Segoe UI", 9, "bold"), bd=0, command=select_image_file)
+        btn_attach.pack(side="left", padx=(0, 6), ipady=6, ipadx=10)
 
-        entry = tk.Entry(input_frame, bg="#ffffff", fg="#0f172a", font=("Segoe UI", 11), insertbackground="#4f46e5", bd=0, highlightthickness=1, highlightbackground="#cbd5e1")
+        entry = tk.Entry(input_frame, bg="#030712", fg="#f8fafc", font=("Segoe UI", 11), insertbackground="#818cf8", bd=0, highlightthickness=1, highlightbackground="rgba(255, 255, 255, 0.1)")
         entry.pack(side="left", fill="x", expand=True, padx=(0, 6), ipady=6)
 
         # Tab 2: Dynamic Execution Plan & Sub-Agents DAG
-        plan_tab = tk.Frame(notebook, bg="#f8fafc")
+        plan_tab = tk.Frame(notebook, bg="#090d16")
         notebook.add(plan_tab, text="🧠 Planning & Sub-Agents")
 
-        plan_hdr = tk.Label(plan_tab, text="🧠 Active Execution Plan DAG", bg="#f8fafc", fg="#0f172a", font=("Outfit", 11, "bold"))
+        plan_hdr = tk.Label(plan_tab, text="🧠 Active Execution Plan DAG", bg="#090d16", fg="#f8fafc", font=("Outfit", 11, "bold"))
         plan_hdr.pack(anchor="w", padx=10, pady=(8, 2))
 
-        plan_txt = tk.Text(plan_tab, bg="#ffffff", fg="#0f172a", font=("Consolas", 10), wrap="word", highlightthickness=1, highlightbackground="#e2e8f0", bd=0)
+        plan_txt = tk.Text(plan_tab, bg="#030712", fg="#cbd5e1", font=("Consolas", 10), wrap="word", highlightthickness=1, highlightbackground="rgba(255, 255, 255, 0.1)", bd=0)
         plan_txt.pack(fill="both", expand=True, padx=8, pady=8)
+
 
         def refresh_plan_view():
             plan_txt.delete("1.0", "end")
@@ -664,13 +668,13 @@ class FloatingMascotApp:
         refresh_plan_view()
 
         # Tab 3: Workspace Explorer & Viewer
-        ws_tab = tk.Frame(notebook, bg="#f8fafc")
+        ws_tab = tk.Frame(notebook, bg="#090d16")
         notebook.add(ws_tab, text="📁 Workspace Files")
 
-        ws_bar = tk.Frame(ws_tab, bg="#ffffff", pady=4, padx=8, highlightthickness=1, highlightbackground="#e2e8f0")
+        ws_bar = tk.Frame(ws_tab, bg="#0f172a", pady=6, padx=10, highlightthickness=1, highlightbackground="rgba(255, 255, 255, 0.1)")
         ws_bar.pack(fill="x", side="top")
 
-        lbl_ws_info = tk.Label(ws_bar, text="📁 Workspace Explorer", bg="#ffffff", fg="#0f172a", font=("Consolas", 10, "bold"))
+        lbl_ws_info = tk.Label(ws_bar, text="📁 Workspace Explorer", bg="#0f172a", fg="#f8fafc", font=("Consolas", 10, "bold"))
         lbl_ws_info.pack(side="left")
 
         def open_file_dialog_viewer(filename):
@@ -682,22 +686,23 @@ class FloatingMascotApp:
             view_dlg = tk.Toplevel(self.chat_window)
             is_py = filename.endswith(".py") or filename.endswith(".pyw")
             view_dlg.title(f"🐍 Viewing Python File: {filename}" if is_py else f"📄 Viewing File: {filename}")
-            view_dlg.geometry("680x540")
+            view_dlg.geometry("700x560")
             view_dlg.attributes("-topmost", True)
-            view_dlg.config(bg="#f8fafc")
+            view_dlg.config(bg="#090d16")
 
-            lbl_header = tk.Label(view_dlg, text=f"{'🐍' if is_py else '📄'} {filename} ({res.get('lines', 0)} lines)", bg="#ffffff", fg="#0f172a", font=("Consolas", 11, "bold"), pady=8)
+            lbl_header = tk.Label(view_dlg, text=f"{'🐍' if is_py else '📄'} {filename} ({res.get('lines', 0)} lines)", bg="#0f172a", fg="#f8fafc", font=("Consolas", 11, "bold"), pady=10)
             lbl_header.pack(fill="x", side="top")
 
-            txt_body = tk.Text(view_dlg, bg="#ffffff", fg="#0f172a", font=("Consolas", 10), wrap="none", highlightthickness=1, highlightbackground="#e2e8f0", bd=0)
-            txt_body.pack(fill="both", expand=True, padx=8, pady=8)
+            txt_body = tk.Text(view_dlg, bg="#030712", fg="#cbd5e1", font=("Consolas", 10), wrap="none", highlightthickness=1, highlightbackground="rgba(255, 255, 255, 0.1)", bd=0)
+            txt_body.pack(fill="both", expand=True, padx=10, pady=10)
             txt_body.insert("end", res.get("content", ""))
 
-            btn_close = tk.Button(view_dlg, text="Close Viewer", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 10, "bold"), command=view_dlg.destroy)
-            btn_close.pack(pady=(0, 8), ipadx=12)
+            btn_close = tk.Button(view_dlg, text="Close Viewer", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 10, "bold"), bd=0, command=view_dlg.destroy)
+            btn_close.pack(pady=(0, 10), ipadx=16, ipady=4)
 
-        ws_txt = tk.Text(ws_tab, bg="#ffffff", fg="#0f172a", font=("Consolas", 9), wrap="word", highlightthickness=1, highlightbackground="#e2e8f0", bd=0)
+        ws_txt = tk.Text(ws_tab, bg="#030712", fg="#cbd5e1", font=("Consolas", 9), wrap="word", highlightthickness=1, highlightbackground="rgba(255, 255, 255, 0.1)", bd=0)
         ws_txt.pack(fill="both", expand=True, padx=8, pady=8)
+
 
         def refresh_ws_view():
             ws_txt.delete("1.0", "end")
