@@ -10,12 +10,15 @@ class MascotWidget {
             doc_bot: 'assets/mascots/doc_bot_idle.png',
             data_bot: 'assets/mascots/data_bot_idle.png',
             code_bot: 'assets/mascots/code_bot_idle.png',
-            artist_bot: 'assets/mascots/artist_bot_idle.png',
+            artist_bot: 'assets/mascots/artist_bot_coding.png',
             server_bot: 'assets/mascots/server_bot_idle.png',
             launch_bot: 'assets/mascots/launch_bot_idle.png',
             cloud_bot: 'assets/mascots/cloud_bot_idle.png',
             fox_bot: 'assets/mascots/fox_bot_idle.png',
+            crystal_bot: 'assets/mascots/crystal_bot_idle.png',
+            cyber_cat: 'assets/mascots/cyber_cat_idle.png',
         };
+
 
 
         this.assets = {

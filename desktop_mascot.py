@@ -68,6 +68,13 @@ MASCOT_THEMES = {
         "idle": "fox_bot_idle.png",
         "coding": "fox_bot_coding.png"
     },
+    "crystal_bot": {
+        "name": "💎 Crystal Bot (Thinking & Analytics Engine)",
+        "desc": "Holographic Crystal Bot with Analytics Screen",
+        "idle": "crystal_bot_idle.png",
+        "coding": "crystal_bot_coding.png"
+    },
+
 
     "pixel_bot": {
         "name": "🤖 Neo Purple Bot",
