@@ -904,9 +904,10 @@ class NeoAgentCore:
                 try:
                     selected_framework = await asyncio.wait_for(framework_future, timeout=6.0)
                 except asyncio.TimeoutError:
-                    selected_framework = "nextjs"
+                    selected_framework = "html"
                 finally:
                     self.pending_framework_selections.pop(framework_req_id, None)
+
 
             if selected_framework in ["nextjs", "yes", "claw", "Next.js", True]:
 

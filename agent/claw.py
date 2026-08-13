@@ -155,7 +155,8 @@ class ClawAgentEngine:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            "options": {"temperature": 0.2, "num_ctx": 4096, "num_predict": 2048},
+            "options": {"temperature": 0.2, "num_ctx": 16384, "num_predict": 8192},
+
             "stream": True
         }
 
