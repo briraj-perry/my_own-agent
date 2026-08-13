@@ -320,6 +320,49 @@
         </div>
     </div>
 
+    <!-- Framework Selection Modal Prompt Overlay (Next.js vs HTML) -->
+    <div class="modal-overlay" id="framework-modal">
+        <div class="modal-card glass-panel-modal">
+            <div class="modal-header">
+                <div class="modal-warning-icon" style="color: #4cc9f0; background: rgba(76,201,240,0.1);">
+                    <i class="fa-solid fa-cubes"></i>
+                </div>
+                <div>
+                    <h2>Choose App Framework</h2>
+                    <p class="modal-subtitle">Do you want to build this using Next.js or normal HTML?</p>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <p style="color: #e2e8f0; font-size: 0.95rem; margin-bottom: 16px;">
+                    Select your preferred framework for this application:
+                </p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div id="framework-card-nextjs" class="framework-card-option selected" style="border: 2px solid #4cc9f0; background: rgba(76, 201, 240, 0.12); padding: 18px; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.2s ease;">
+                        <i class="fa-brands fa-react" style="font-size: 2.2rem; color: #61dafb; margin-bottom: 8px;"></i>
+                        <h3 style="color: #ffffff; margin: 6px 0; font-size: 1.1rem;">Next.js App</h3>
+                        <p style="font-size: 0.8rem; color: #a0aec0; margin: 0;">Powered by <strong>Claw Agent</strong><br>(Next.js & React Architect)</p>
+                    </div>
+                    <div id="framework-card-html" class="framework-card-option" style="border: 2px solid rgba(247, 37, 133, 0.4); background: rgba(247, 37, 133, 0.06); padding: 18px; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.2s ease;">
+                        <i class="fa-brands fa-html5" style="font-size: 2.2rem; color: #e34f26; margin-bottom: 8px;"></i>
+                        <h3 style="color: #ffffff; margin: 6px 0; font-size: 1.1rem;">Normal HTML</h3>
+                        <p style="font-size: 0.8rem; color: #a0aec0; margin: 0;">Powered by <strong>Neo Agent</strong><br>(HTML/CSS/JS Engine)</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="justify-content: flex-end; gap: 10px;">
+                <button id="framework-confirm-html-btn" class="cyber-button secondary">
+                    <i class="fa-solid fa-code"></i> Normal HTML (Neo Agent)
+                </button>
+                <button id="framework-confirm-nextjs-btn" class="cyber-button primary">
+                    <i class="fa-solid fa-bolt"></i> Next.js (Claw Agent)
+                </button>
+            </div>
+        </div>
+    </div>
+
+
     <!-- Sub-Agent Inspector Modal (Requirement 2) -->
     <div class="modal-overlay" id="subagent-modal">
         <div class="modal-card glass-panel-modal subagent-modal-card">

@@ -12,13 +12,17 @@ from tools.screen_perception import ScreenPerceptionEngine
 from tools import file_tools, code_executor
 from indexer import CodebaseIndexer
 from agent.planner import ExecutionPlanner, ExecutionPlan
+from agent.claw import ClawAgentEngine
+
 
 def extract_filename_from_prompt(query: str) -> Optional[str]:
     """Extracts explicit filename from user query (e.g. test.py, notes.md, index.html)."""
-    match = re.search(r'[\'"]?([a-zA-Z0-9_\-\/\\]+\.(py|pyw|js|html|css|json|md|txt|cpp|c|sh|ps1))[\'"]?', query, re.IGNORECASE)
-    if match:
+    FRAMEWORK_EXCLUDES = ["next.js", "vue.js", "react.js", "node.js", "nuxt.js", "express.js", "chart.js", "three.js", "alpine.js", "ember.js"]
+    matches = re.finditer(r'[\'"]?([a-zA-Z0-9_\-\/\\]+\.(py|pyw|js|jsx|ts|tsx|html|css|json|md|txt|cpp|c|sh|ps1))[\'"]?', query, re.IGNORECASE)
+    for match in matches:
         filename = match.group(1).strip('\'"')
-        return filename
+        if filename.lower() not in FRAMEWORK_EXCLUDES:
+            return filename
     return None
 
 def extract_code_block(text: str) -> str:
@@ -37,16 +41,17 @@ def extract_code_block(text: str) -> str:
 def extract_multi_file_blocks(text: str) -> Dict[str, str]:
     """Parses a multi-file LLM response into {filename: content} pairs.
 
-    Recognises two header patterns:
+    Recognises header patterns:
       1.  ### FILE: filename.ext
       2.  --- FILE: filename.ext ---
+      3.  // FILE: filename.ext
     followed by a fenced code block.
     """
     files: Dict[str, str] = {}
     pattern = re.compile(
-        r'(?:###\s*FILE:\s*|---\s*FILE:\s*)'
-        r'([a-zA-Z0-9_\-\/\\.]+\.(?:html|css|js|json|py|md))'
-        r'[\s\-]*\n'
+        r'(?:###\s*FILE:\s*|---\s*FILE:\s*|\/\/\s*FILE:\s*|#\s*FILE:\s*)'
+        r'([a-zA-Z0-9_\-\/\\.]+\.(?:html|css|jsx?|tsx?|json|py|md|mjs|cjs))'
+        r'[\s\-\*\/]*\n'
         r'```[a-zA-Z]*\n'
         r'(.*?)'
         r'\n```',
@@ -57,6 +62,7 @@ def extract_multi_file_blocks(text: str) -> Dict[str, str]:
         content = match.group(2).strip()
         files[filename] = content
     return files
+
 
 
 def extract_file_patches(text: str) -> List[Dict[str, str]]:
@@ -96,6 +102,34 @@ def is_web_intent(query: str) -> bool:
         "css", "javascript", "responsive",
     ]
     return any(signal in q for signal in web_signals)
+
+
+def is_app_building_intent(query: str) -> bool:
+    """Detects if the user query requests building/creating a new application."""
+    q = query.lower()
+    
+    # Direct keyword matches
+    app_keywords = [
+        "make an app", "create an app", "build an app", "make app", "create app", "build app",
+        "make a website", "create a website", "build a website", "make website", "create website", "build website",
+        "make a web app", "create a web app", "build a web app", "make web app", "create web app", "build web app",
+        "todo app", "calculator app", "dashboard app", "weather app", "next.js app", "nextjs app", "html app",
+        "build me an app", "create a complete app", "develop an app", "make project", "create project", "build project",
+        "make application", "create application", "build application", "make a page", "build a page", "create a page"
+    ]
+    if any(kw in q for kw in app_keywords):
+        return True
+
+    # Action verbs combined with target nouns
+    action_verbs = ["make", "build", "create", "generate", "develop", "code", "design", "construct", "produce"]
+    target_nouns = ["app", "apps", "application", "website", "webpage", "site", "dashboard", "frontend", "project", "ui", "page"]
+
+    has_verb = any(v in q for v in action_verbs)
+    has_noun = any(n in q for n in target_nouns)
+
+    return (has_verb and has_noun) or is_web_intent(query)
+
+
 
 
 class SubAgent:
@@ -146,8 +180,10 @@ class NeoAgentCore:
         self.active_model = "gemma4:26b"
         self.pending_permissions: Dict[str, asyncio.Future] = {}
         self.pending_folder_selections: Dict[str, asyncio.Future] = {}
+        self.pending_framework_selections: Dict[str, asyncio.Future] = {}
         self.screen_engine = ScreenPerceptionEngine()
         self.indexer = CodebaseIndexer()
+        self.claw_engine = ClawAgentEngine()
         self.active_sub_agents: Dict[str, SubAgent] = {}
         self.active_working_folder: Optional[str] = None
         self.chat_history: List[Dict[str, str]] = []
@@ -197,6 +233,15 @@ class NeoAgentCore:
                 future.set_result(selected_folder)
             return True
         return False
+
+    def resolve_framework_selection(self, request_id: str, choice: str) -> bool:
+        if request_id in self.pending_framework_selections:
+            future = self.pending_framework_selections[request_id]
+            if not future.done():
+                future.set_result(choice)
+            return True
+        return False
+
 
     def is_ollama_running(self) -> bool:
         """Checks if local Ollama service is listening at port 11434."""
@@ -549,10 +594,25 @@ class NeoAgentCore:
                     + "\n".join(existing_snippets)
                 )
 
+            MASCOT_SUBAGENT_MAP = {
+                "architecture": "doc_bot",
+                "interface": "data_bot",
+                "styling": "artist_bot",
+                "implementation": "code_bot",
+                "quality": "server_bot"
+            }
+            subagent_mascot = MASCOT_SUBAGENT_MAP.get(agent.id, "executing")
+
             agent.status = "working"
             agent.progress = 15
             agent.logs.append("Dependencies satisfied. Starting assigned scope.")
-            yield {"type": "sub_agent_update", "sub_agent": agent.to_dict()}
+            yield {
+                "type": "sub_agent_update",
+                "sub_agent": agent.to_dict(),
+                "mascot_state": subagent_mascot,
+                "status": f"⚡ {agent.name} working on assigned scope..."
+            }
+
 
             handoff_context = "\n\n".join(
                 f"--- HANDOFF FROM {dep.upper()} ---\n{handoffs[dep][:4000]}"
@@ -563,15 +623,27 @@ class NeoAgentCore:
                 if not agent.target_file
                 else f"Return ONLY the complete production-ready content for `{agent.target_file}` in one markdown code block. Include ALL pre-existing code plus your new additions."
             )
+            system_prompt = (
+                f"You are {agent.name} ({agent.role}), an autonomous specialist software engineer.\n"
+                "YOUR MANDATE: Generate 100% complete, flawless, production-ready code with zero placeholders or syntax typos.\n"
+                "STRICT SYNTAX & QUALITY DIRECTIVES:\n"
+                "1. For CSS: Ensure all color values use valid numeric channels (e.g. `rgba(255, 255, 255, 0.1)`). NEVER output invalid CSS like `2lag`.\n"
+                "2. For HTML/JSX: Ensure all elements have unique IDs and valid closing tags.\n"
+                "3. For JS/React: Implement explicit event listeners for every interactive button or input."
+            )
             prompt = (
-                f"You are the {agent.role} in a coordinated software delivery team.\n"
-                f"Project request: {query}\n"
-                f"Your responsibility: {agent.description}\n"
-                f"{output_instruction}\n"
-                "Do not redo the work of another agent. Honor all upstream handoffs.\n"
-                "CRITICAL PRESERVATION DIRECTIVE: Retain all existing working buttons, HTML structure, CSS styling, and JS code. Add the new feature cleanly.\n\n"
-                f"{existing_context}\n\n"
-                f"{handoff_context}"
+                f"=== SUB-AGENT SPECIALIST DIRECTIVE ===\n"
+                f"Specialist Name: {agent.name}\n"
+                f"Specialist Role: {agent.role}\n"
+                f"Target Output File: {agent.target_file or 'Architectural Handoff'}\n"
+                f"Project Query: {query}\n\n"
+                f"=== YOUR ASSIGNED RESPONSIBILITIES ===\n"
+                f"{agent.description}\n\n"
+                f"=== REQUIRED OUTPUT FORMAT ===\n"
+                f"{output_instruction}\n\n"
+                f"=== UPSTREAM HANDOFF CONTEXT ===\n"
+                f"{handoff_context}\n\n"
+                f"{existing_context}"
             )
             agent.progress = 45
             yield {"type": "sub_agent_update", "sub_agent": agent.to_dict()}
@@ -582,14 +654,15 @@ class NeoAgentCore:
                     data=json.dumps({
                         "model": model,
                         "messages": [
-                            {"role": "system", "content": "You are a precise software delivery specialist. Follow the requested output format exactly. Output ONLY complete production-ready code with zero placeholders or TODO stubs."},
+                            {"role": "system", "content": system_prompt},
                             {"role": "user", "content": prompt},
                         ],
-                        "options": {"num_ctx": 8192, "temperature": 0.15},
+                        "options": {"num_ctx": 4096, "num_predict": 2048, "temperature": 0.15},
                         "stream": False,
                     }).encode("utf-8"),
                     headers={"Content-Type": "application/json"},
                 )
+
 
                 def call_agent() -> Dict[str, Any]:
                     with urllib.request.urlopen(req, timeout=90.0) as response:
@@ -769,7 +842,65 @@ class NeoAgentCore:
         self.active_working_folder = target_folder
         file_tools.set_workspace_root(target_folder)
 
+        # Framework Selection Popup for App Creation (Next.js vs Normal HTML)
+        if is_app_building_intent(user_query):
+            selected_framework = None
+            if "next.js" in query_lower or "nextjs" in query_lower:
+                selected_framework = "nextjs"
+            elif "normal html" in query_lower or "vanilla html" in query_lower:
+                selected_framework = "html"
+            else:
+                framework_req_id = str(uuid.uuid4())[:8]
+                yield {
+                    "type": "framework_selection_required",
+                    "id": framework_req_id,
+                    "mascot_state": "permission",
+                    "title": "Select App Framework",
+                    "description": "Do you want to build this using Next.js or normal HTML?",
+                    "options": [
+                        {"id": "nextjs", "label": "Next.js (Claw Agent)", "agent": "claw"},
+                        {"id": "html", "label": "Normal HTML (Neo Agent)", "agent": "neo"}
+                    ]
+                }
+                framework_future = loop.create_future()
+                self.pending_framework_selections[framework_req_id] = framework_future
+
+                try:
+                    selected_framework = await asyncio.wait_for(framework_future, timeout=6.0)
+                except asyncio.TimeoutError:
+                    selected_framework = "nextjs"
+                finally:
+                    self.pending_framework_selections.pop(framework_req_id, None)
+
+            if selected_framework in ["nextjs", "yes", "claw", "Next.js", True]:
+
+
+                yield {
+                    "type": "execution_log",
+                    "mascot_state": "claw",
+                    "command": "route_to_agent('claw')",
+                    "output": "⚡ Prompt routed to Claw Agent (Next.js App Specialist)."
+                }
+                yield {"type": "token", "content": "⚡ **Framework Selected**: Next.js (Claw Agent)\n\n"}
+                async for event in self.claw_engine.stream_nextjs_app_response(
+                    user_query,
+                    target_folder=target_folder,
+                    model_id=target_llm_model,
+                    indexer=self.indexer
+                ):
+                    yield event
+                return
+            else:
+                yield {
+                    "type": "execution_log",
+                    "mascot_state": "executing",
+                    "command": "route_to_agent('neo')",
+                    "output": "🤖 Prompt routed to Neo Agent (Normal HTML Specialist)."
+                }
+                yield {"type": "token", "content": "🤖 **Framework Selected**: Normal HTML (Neo Agent)\n\n"}
+
         # Handle Sub-Agent Spawning for Big Tasks (Requirements 1 & 2)
+
         if self.is_big_task(user_query):
             permission_id = str(uuid.uuid4())[:8]
             yield {

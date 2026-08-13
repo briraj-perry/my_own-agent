@@ -37,7 +37,12 @@ class FolderResponseRequest(BaseModel):
     request_id: str
     folder: str
 
+class FrameworkResponseRequest(BaseModel):
+    request_id: str
+    choice: str
+
 class SetRootRequest(BaseModel):
+
     folder: str
 
 class FolderAnalyzeRequest(BaseModel):
@@ -115,7 +120,13 @@ async def handle_folder_selection(req: FolderResponseRequest):
     success = agent_engine.resolve_folder_selection(req.request_id, req.folder)
     return {"status": "success", "request_id": req.request_id, "folder": req.folder}
 
+@app.post("/api/framework_selection")
+async def handle_framework_selection(req: FrameworkResponseRequest):
+    success = agent_engine.resolve_framework_selection(req.request_id, req.choice)
+    return {"status": "success", "request_id": req.request_id, "choice": req.choice}
+
 @app.post("/api/analyze/folder")
+
 async def analyze_folder(req: FolderAnalyzeRequest):
     result = await agent_engine.analyze_and_autofix_folder(req.folder)
     return result
@@ -164,7 +175,14 @@ async def websocket_endpoint(websocket: WebSocket):
                 agent_engine.resolve_folder_selection(req_id, folder)
                 await websocket.send_json({"type": "folder_acknowledged", "id": req_id, "folder": folder})
 
+            elif msg_type == "framework_response":
+                req_id = msg.get("id")
+                choice = msg.get("choice", "nextjs")
+                agent_engine.resolve_framework_selection(req_id, choice)
+                await websocket.send_json({"type": "framework_acknowledged", "id": req_id, "choice": choice})
+
             elif msg_type == "ping":
+
                 await websocket.send_json({"type": "pong"})
 
     except WebSocketDisconnect:

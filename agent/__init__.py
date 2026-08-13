@@ -5,6 +5,7 @@ from .prompts import get_system_prompt, CODING_SYSTEM_PROMPT, GENERAL_SYSTEM_PRO
 from .nodes import call_model, check_permission, execute_tools, self_correct_eval
 from .graph import build_agent_graph, create_agent
 from .core import NeoAgentCore
+from .claw import ClawAgentEngine
 
 __all__ = [
     "AgentState",
@@ -20,5 +21,7 @@ __all__ = [
     "build_agent_graph",
     "create_agent",
     "NeoAgentCore",
+    "ClawAgentEngine",
 ]
+
 

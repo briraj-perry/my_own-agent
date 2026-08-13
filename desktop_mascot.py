@@ -20,6 +20,55 @@ MASCOT_THEMES = {
         "idle": "blue_bot_idle.png",
         "coding": "blue_bot_coding.png"
     },
+    "doc_bot": {
+        "name": "📜 Doc Bot (Architecture & Specs)",
+        "desc": "Cloud Mascot with Scroll & Checkmark Visor",
+        "idle": "doc_bot_idle.png",
+        "coding": "doc_bot_coding.png"
+    },
+    "data_bot": {
+        "name": "📊 Data Bot (Analytics & Experience)",
+        "desc": "Cloud Mascot with Terminal Visor & Chart Badge",
+        "idle": "data_bot_idle.png",
+        "coding": "data_bot_coding.png"
+    },
+    "code_bot": {
+        "name": "⚡ Code Bot (Implementation Specialist)",
+        "desc": "Cyber Matrix Bot with Binary Screen & Code Badge",
+        "idle": "code_bot_idle.png",
+        "coding": "code_bot_coding.png"
+    },
+    "artist_bot": {
+        "name": "🎨 Artist Bot (Styling & CSS Designer)",
+        "desc": "Creative Canvas Bot with Paint Palette & Rainbow Arms",
+        "idle": "artist_bot_idle.png",
+        "coding": "artist_bot_coding.png"
+    },
+    "server_bot": {
+        "name": "🖥️ Server Bot (QA & Systems Engineer)",
+        "desc": "Retro Server Rack Bot with Glowing Matrix Face",
+        "idle": "server_bot_idle.png",
+        "coding": "server_bot_coding.png"
+    },
+    "launch_bot": {
+        "name": "🚀 Launch Bot (Deployment & Build Specialist)",
+        "desc": "High-Speed Cyber Rocket Mascot",
+        "idle": "launch_bot_idle.png",
+        "coding": "launch_bot_coding.png"
+    },
+    "cloud_bot": {
+        "name": "☁️ Cloud Bot (Cloud & API Specialist)",
+        "desc": "Playful Pixel Cloud Mascot with Sweatdrop",
+        "idle": "cloud_bot_idle.png",
+        "coding": "cloud_bot_coding.png"
+    },
+    "fox_bot": {
+        "name": "🦊 Fox Bot (Cyber Fox Engine)",
+        "desc": "Futuristic Cyber Fox with FOX Visor",
+        "idle": "fox_bot_idle.png",
+        "coding": "fox_bot_coding.png"
+    },
+
     "pixel_bot": {
         "name": "🤖 Neo Purple Bot",
         "desc": "Classic Cyberpunk Purple Pixel Robot",
@@ -51,6 +100,7 @@ MASCOT_THEMES = {
         "coding": ""
     }
 }
+
 
 class FloatingMascotApp:
     """Ultra-Modern Cyber Desktop Mascot Companion Overlay & DAG Planning Studio GUI."""
@@ -191,20 +241,43 @@ class FloatingMascotApp:
     def open_mascot_settings(self):
         settings_dlg = tk.Toplevel(self.root)
         settings_dlg.title("⚙️ Mascot & Appearance Settings")
-        settings_dlg.geometry("540x520")
+        settings_dlg.geometry("560x620")
         settings_dlg.attributes("-topmost", True)
         settings_dlg.config(bg="#f8fafc")
 
-        lbl_hdr = tk.Label(settings_dlg, text="⚙️ Select Desktop Mascot Character", bg="#ffffff", fg="#0f172a", font=("Outfit", 12, "bold"), pady=10)
+        lbl_hdr = tk.Label(settings_dlg, text="⚙️ Select Desktop Mascot Character", bg="#ffffff", fg="#0f172a", font=("Outfit", 13, "bold"), pady=10)
         lbl_hdr.pack(fill="x", side="top")
 
-        lbl_sub = tk.Label(settings_dlg, text="Click any character below to switch live! All patches removed for 100% transparent overlay.", bg="#f8fafc", fg="#64748b", font=("Segoe UI", 9), pady=6)
+        lbl_sub = tk.Label(settings_dlg, text="Click any character below to switch live! 100% transparent patch-free overlay.", bg="#f8fafc", fg="#64748b", font=("Segoe UI", 9), pady=6)
         lbl_sub.pack()
 
         selected_var = tk.StringVar(value=self.active_theme_key)
 
-        grid_frame = tk.Frame(settings_dlg, bg="#f8fafc")
-        grid_frame.pack(fill="both", expand=True, padx=16, pady=10)
+        # Scrollable Canvas Container for all 14 mascots
+        container = tk.Frame(settings_dlg, bg="#f8fafc")
+        container.pack(fill="both", expand=True, padx=12, pady=6)
+
+        canvas = tk.Canvas(container, bg="#f8fafc", highlightthickness=0)
+        scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg="#f8fafc")
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+
+        def _on_canvas_configure(event):
+            canvas.itemconfig(canvas_window, width=event.width)
+        canvas.bind("<Configure>", _on_canvas_configure)
+
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
 
         card_frames = {}
 
@@ -213,7 +286,7 @@ class FloatingMascotApp:
                 is_active = (k == active_key)
                 card_el.config(
                     bg="#e0e7ff" if is_active else "#ffffff",
-                    highlightbackground="#4f46e5" if is_active else "#e2e8f0"
+                    highlightbackground="#4f46e5" if is_active else "#cbd5e1"
                 )
 
         def on_select_theme(key):
@@ -222,12 +295,22 @@ class FloatingMascotApp:
             update_card_visuals(key)
 
         for key, info in MASCOT_THEMES.items():
-            card = tk.Frame(grid_frame, bg="#e0e7ff" if self.active_theme_key == key else "#ffffff", bd=1, relief="solid", highlightbackground="#4f46e5" if self.active_theme_key == key else "#e2e8f0", highlightthickness=2)
-            card.pack(fill="x", pady=6, ipady=6, ipadx=8)
+            card = tk.Frame(scrollable_frame, bg="#e0e7ff" if self.active_theme_key == key else "#ffffff", bd=1, relief="solid", highlightbackground="#4f46e5" if self.active_theme_key == key else "#cbd5e1", highlightthickness=2)
+            card.pack(fill="x", pady=5, ipady=4, ipadx=8)
             card_frames[key] = card
 
+            # Left thumbnail image preview
+            img_lbl = None
+            if hasattr(self, "mascot_cache") and key in self.mascot_cache and self.mascot_cache[key].get("idle"):
+                preview_img = self.mascot_cache[key].get("idle")
+                img_lbl = tk.Label(card, image=preview_img, bg=card.cget("bg"))
+                img_lbl.pack(side="left", padx=8)
+
+            content_box = tk.Frame(card, bg=card.cget("bg"))
+            content_box.pack(side="left", fill="both", expand=True)
+
             rb = tk.Radiobutton(
-                card,
+                content_box,
                 text=info["name"],
                 variable=selected_var,
                 value=key,
@@ -239,23 +322,30 @@ class FloatingMascotApp:
                 font=("Segoe UI", 11, "bold"),
                 command=lambda k=key: on_select_theme(k)
             )
-            rb.pack(anchor="w", side="top", padx=8)
+            rb.pack(anchor="w", side="top")
 
-            desc = tk.Label(card, text=info["desc"], bg=card.cget("bg"), fg="#64748b", font=("Segoe UI", 9))
-            desc.pack(anchor="w", padx=28)
-            
-            # Make entire card clickable
+            desc = tk.Label(content_box, text=info["desc"], bg=card.cget("bg"), fg="#64748b", font=("Segoe UI", 9))
+            desc.pack(anchor="w", padx=24)
+
             card.bind("<Button-1>", lambda e, k=key: on_select_theme(k))
+            content_box.bind("<Button-1>", lambda e, k=key: on_select_theme(k))
             desc.bind("<Button-1>", lambda e, k=key: on_select_theme(k))
+            if img_lbl:
+                img_lbl.bind("<Button-1>", lambda e, k=key: on_select_theme(k))
 
         def apply_choice():
             new_theme = selected_var.get()
             self.load_mascot_theme(new_theme)
+            try:
+                canvas.unbind_all("<MouseWheel>")
+            except Exception:
+                pass
             messagebox.showinfo("Mascot Updated", f"🎉 Mascot successfully active:\n{MASCOT_THEMES[new_theme]['name']}!")
             settings_dlg.destroy()
 
         btn_save = tk.Button(settings_dlg, text="Done 🚀", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 10, "bold"), bd=0, command=apply_choice)
-        btn_save.pack(pady=12, ipadx=20, ipady=6)
+        btn_save.pack(pady=10, ipadx=24, ipady=6)
+
 
     def on_click(self, event):
         self.start_x = event.x
@@ -689,7 +779,23 @@ class FloatingMascotApp:
                             req_id = event.get("id")
                             self.agent.resolve_folder_selection(req_id, self.current_folder)
 
+                        elif evt_type == "framework_selection_required":
+                            req_id = event.get("id")
+                            def ask_framework(rid=req_id):
+                                ans = messagebox.askyesno(
+                                    "Choose App Framework",
+                                    "Do you want to build this using Next.js or normal HTML?\n\n"
+                                    "• Click YES to use Next.js (Claw Agent)\n"
+                                    "• Click NO to use Normal HTML (Neo Agent)",
+                                    parent=self.root
+                                )
+                                choice = "nextjs" if ans else "html"
+                                self.agent.resolve_framework_selection(rid, choice)
+                            self.root.after(0, ask_framework)
+
+
                         elif evt_type == "permission_request":
+
                             req_id = event.get("id")
                             self.agent.resolve_permission(req_id, True)
 

@@ -46,10 +46,11 @@ class TestAgentCore(unittest.TestCase):
     def test_system_prompt_builder(self):
         """Test system prompt selection."""
         prompt = get_system_prompt("coding")
-        self.assertIn("advanced local AI Coding Agent", prompt)
+        self.assertIn("advanced AI Coding Agent", prompt)
 
         gen_prompt = get_system_prompt("general")
         self.assertIn("highly knowledgeable local AI assistant", gen_prompt)
+
 
     def test_permission_check_node(self):
         """Test check_permission node requiring approval for destructive tools."""
@@ -184,10 +185,12 @@ class TestAgentCore(unittest.TestCase):
             [
                 ("architecture", []),
                 ("interface", ["architecture"]),
-                ("implementation", ["architecture", "interface"]),
-                ("quality", ["interface", "implementation"]),
+                ("styling", ["architecture", "interface"]),
+                ("implementation", ["architecture", "interface", "styling"]),
+                ("quality", ["interface", "implementation", "styling"]),
             ],
         )
+
 
         core.is_ollama_running = lambda: False
 
@@ -201,8 +204,9 @@ class TestAgentCore(unittest.TestCase):
         events = asyncio.run(collect_events())
         self.assertEqual(events[0]["type"], "coordination_update")
         updates = [event for event in events if event["type"] == "sub_agent_update"]
-        self.assertEqual(len(updates), 4)
+        self.assertEqual(len(updates), len(team))
         self.assertTrue(all(event["sub_agent"]["status"] == "failed" for event in updates))
+
 
 
 if __name__ == "__main__":

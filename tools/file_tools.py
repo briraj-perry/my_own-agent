@@ -54,8 +54,12 @@ def list_workspace_folders() -> List[str]:
 def get_folder_code_files(folder_path: str = ".") -> List[Dict[str, Any]]:
     """Recursively finds all Python (.py, .pyw) and source code files inside folder_path."""
     full_root = resolve_target_path(folder_path) if folder_path != "." else CURRENT_WORKSPACE_ROOT
-    exclude_dirs = {".git", "__pycache__", "node_modules", ".venv", "venv", ".chromadb", ".idea", ".vscode"}
-    allowed_exts = {".py", ".pyw", ".js", ".html", ".css", ".json", ".md", ".txt", ".sh", ".ps1", ".cpp", ".c", ".h", ".cs", ".java"}
+    exclude_dirs = {
+        ".git", "__pycache__", "node_modules", ".venv", "venv", ".chromadb", 
+        ".idea", ".vscode", ".next", "build", "dist", "out", ".output", "coverage", ".turbo"
+    }
+    allowed_exts = {".py", ".pyw", ".js", ".jsx", ".ts", ".tsx", ".html", ".css", ".json", ".md", ".txt", ".sh", ".ps1", ".cpp", ".c", ".h", ".cs", ".java"}
+
 
     code_files = []
     if not os.path.exists(full_root):

@@ -133,6 +133,21 @@ class NeoCLI:
                 if not approved:
                     console.print("[red]✖ Operation rejected by user.[/red]")
 
+            elif evt_type == "framework_selection_required":
+                console.print("\n")
+                console.print(Panel(
+                    "[bold cyan]⚡ CHOOSE APP FRAMEWORK[/bold cyan]\n\n"
+                    "Do you want to build this using Next.js or normal HTML?\n"
+                    "• [bold green]Yes[/bold green]: Next.js (Claw Agent)\n"
+                    "• [bold yellow]No[/bold yellow]: Normal HTML (Neo Agent)",
+                    border_style="cyan",
+                    title="[bold yellow]FRAMEWORK SELECTION PROMPT[/bold yellow]"
+                ))
+                use_nextjs = Confirm.ask("Do you want to build this using Next.js?", default=True)
+                choice = "nextjs" if use_nextjs else "html"
+                self.agent.resolve_framework_selection(event.get("id"), choice)
+
+
             elif evt_type == "execution_log":
                 console.print(Panel(
                     Syntax(event.get("output", ""), "bash", theme="monokai"),

@@ -39,7 +39,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const folderConfirmBtn = document.getElementById('folder-confirm-btn');
     const folderConfirmRootBtn = document.getElementById('folder-confirm-root-btn');
 
+    // Framework Modal Elements (Next.js vs HTML)
+    let activeFrameworkReqId = null;
+    let selectedFrameworkChoice = 'nextjs';
+    const frameworkModal = document.getElementById('framework-modal');
+    const frameworkCardNextjs = document.getElementById('framework-card-nextjs');
+    const frameworkCardHtml = document.getElementById('framework-card-html');
+    const frameworkConfirmNextjsBtn = document.getElementById('framework-confirm-nextjs-btn');
+    const frameworkConfirmHtmlBtn = document.getElementById('framework-confirm-html-btn');
+
     // Sub-Agent Inspector Modal Elements (Requirement 2)
+
     const subagentModal = document.getElementById('subagent-modal');
     const saInspectorTitle = document.getElementById('sa-inspector-title');
     const saInspectorRole = document.getElementById('sa-inspector-role');
@@ -239,7 +249,46 @@ document.addEventListener('DOMContentLoaded', () => {
             renderFolderSelectionOptions(folders);
             folderModal.classList.add('active');
 
+        } else if (type === 'framework_selection_required') {
+            activeFrameworkReqId = evt.id;
+            if (frameworkModal) frameworkModal.classList.add('active');
+
+            // Render inline framework choice card inside chat stream
+            const fwMsgDiv = document.createElement('div');
+            fwMsgDiv.className = 'message system-message framework-inline-msg';
+            fwMsgDiv.innerHTML = `
+                <div class="msg-avatar system-avatar" style="color: #4cc9f0;">
+                    <i class="fa-solid fa-cubes"></i>
+                </div>
+                <div class="msg-bubble" style="border: 1px solid rgba(76, 201, 240, 0.5); background: rgba(76, 201, 240, 0.08);">
+                    <div class="msg-author" style="color: #4cc9f0;">⚡ Framework Choice Required</div>
+                    <div class="msg-content">
+                        <p><strong>Do you want to build this using Next.js or normal HTML?</strong></p>
+                        <div style="margin-top: 12px; display: flex; gap: 10px;">
+                            <button class="cyber-button primary inline-nextjs-btn" style="padding: 8px 16px; font-size: 0.85rem;">
+                                <i class="fa-brands fa-react"></i> Next.js (Claw Agent)
+                            </button>
+                            <button class="cyber-button secondary inline-html-btn" style="padding: 8px 16px; font-size: 0.85rem;">
+                                <i class="fa-brands fa-html5"></i> Normal HTML (Neo Agent)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(fwMsgDiv);
+            scrollToBottom();
+
+            fwMsgDiv.querySelector('.inline-nextjs-btn').addEventListener('click', () => {
+                sendFrameworkResponse('nextjs');
+                fwMsgDiv.style.opacity = '0.6';
+            });
+            fwMsgDiv.querySelector('.inline-html-btn').addEventListener('click', () => {
+                sendFrameworkResponse('html');
+                fwMsgDiv.style.opacity = '0.6';
+            });
+
         } else if (type === 'coordination_update') {
+
             if (workflowMessage) workflowMessage.textContent = evt.message || 'Coordination update received.';
             if (workflowStatus) workflowStatus.textContent = 'IN PROGRESS';
             appendTerminalLog(`[COORDINATION] ${evt.title || 'Workflow'}: ${evt.message || ''}`);
@@ -422,6 +471,48 @@ document.addEventListener('DOMContentLoaded', () => {
         activeFolderReqId = null;
     }
 
+    if (frameworkCardNextjs && frameworkCardHtml) {
+        frameworkCardNextjs.addEventListener('click', () => {
+            selectedFrameworkChoice = 'nextjs';
+            frameworkCardNextjs.style.border = '2px solid #4cc9f0';
+            frameworkCardNextjs.style.background = 'rgba(76, 201, 240, 0.18)';
+            frameworkCardHtml.style.border = '2px solid rgba(247, 37, 133, 0.4)';
+            frameworkCardHtml.style.background = 'rgba(247, 37, 133, 0.06)';
+        });
+        frameworkCardHtml.addEventListener('click', () => {
+            selectedFrameworkChoice = 'html';
+            frameworkCardHtml.style.border = '2px solid #f72585';
+            frameworkCardHtml.style.background = 'rgba(247, 37, 133, 0.18)';
+            frameworkCardNextjs.style.border = '2px solid rgba(76, 201, 240, 0.4)';
+            frameworkCardNextjs.style.background = 'rgba(76, 201, 240, 0.06)';
+        });
+    }
+
+    if (frameworkConfirmNextjsBtn) {
+        frameworkConfirmNextjsBtn.addEventListener('click', () => {
+            sendFrameworkResponse('nextjs');
+        });
+    }
+
+    if (frameworkConfirmHtmlBtn) {
+        frameworkConfirmHtmlBtn.addEventListener('click', () => {
+            sendFrameworkResponse('html');
+        });
+    }
+
+    function sendFrameworkResponse(choice) {
+        if (activeFrameworkReqId && ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+                type: 'framework_response',
+                id: activeFrameworkReqId,
+                choice: choice
+            }));
+        }
+        if (frameworkModal) frameworkModal.classList.remove('active');
+        activeFrameworkReqId = null;
+    }
+
+
     function updateTimelineStep(stepName) {
         const steps = ['step-plan', 'step-verify', 'step-executing', 'step-repair'];
         steps.forEach(s => {
@@ -599,8 +690,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function scrollToBottom() {
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        if (!chatMessages) return;
+        requestAnimationFrame(() => {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+        setTimeout(() => {
+            if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 50);
     }
+
 
     function escapeHtml(str) {
         return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
