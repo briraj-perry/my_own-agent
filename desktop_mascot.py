@@ -619,6 +619,9 @@ class FloatingMascotApp:
         btn_settings = tk.Button(header_frame, text="⚙ Mascots", bg="#1e293b", fg="#94a3b8", font=("Segoe UI", 9, "bold"), bd=0, relief="flat", activebackground="#334155", activeforeground="#f8fafc", cursor="hand2", command=self.open_mascot_settings)
         btn_settings.pack(side="right", padx=(0, 14), ipady=4, ipadx=10)
 
+        btn_new_chat = tk.Button(header_frame, text="🔄 New Chat", bg="#1e1b4b", fg="#a5b4fc", font=("Segoe UI", 9, "bold"), bd=0, relief="flat", activebackground="#312e81", activeforeground="#ffffff", cursor="hand2", command=lambda: reset_chat_view())
+        btn_new_chat.pack(side="right", padx=(0, 8), ipady=4, ipadx=10)
+
         # Model badge
         model_name = self.agent.active_model.split(":")[0] if ":" in self.agent.active_model else self.agent.active_model
         model_lbl = tk.Label(header_frame, text=f"⚡ {model_name}", bg="#1e1b4b", fg="#a5b4fc", font=("Segoe UI", 8, "bold"), padx=10, pady=3)
@@ -683,6 +686,7 @@ class FloatingMascotApp:
             btn.bind("<Leave>", lambda e, b=btn: b.config(bg=bg, fg=fg))
             return btn
 
+        make_pill(quick_bar, "🔄 New Chat", lambda: reset_chat_view(), bg="#1e293b", fg="#38bdf8", active_bg="#0369a1", active_fg="#ffffff")
         make_pill(quick_bar, "✨ Demo Showcase", lambda: render_desktop_showcase_demo(), bg="#4f46e5", fg="#ffffff", active_bg="#6366f1", active_fg="#ffffff")
         make_pill(quick_bar, "🏢 Partners Intel", lambda: quick_prompt("What IBM Business Partners are actively working at Citigroup in the USA? Can you identify the areas they are working in? Are there opportunities to sell IBM technology in those areas through those partners? Explain why."))
         make_pill(quick_bar, "⚡ Web App", lambda: quick_prompt("Build a complete modern Task Management Web App with interactive filters and dark mode"))
@@ -1091,8 +1095,26 @@ class FloatingMascotApp:
             thought_stream_txt.insert("end", "I'll pull together market intelligence, sales data, offerings, and coverage contacts for Citigroup simultaneously. I'll query both questions in parallel against Q2C Sales Out data. Resolved: id=763241, key=\"Citigroup Inc.\". Now dispatching all Step 2 calls in parallel. [WORKER: DraupAgent | Account: Citigroup | Status: OK | Tools: 6 called]")
             refresh_telemetry_tree()
 
-        # Render showcase demo automatically on open
-        render_desktop_showcase_demo()
+        def reset_chat_view():
+            """Clears previous conversation state and initializes a clean, fresh interactive session."""
+            chat_box.delete("1.0", "end")
+            thought_stream_txt.delete("1.0", "end")
+            self.sub_agents_tracker = {}
+            self.agent.chat_history = []
+            lbl_thinking_status.config(text="⚙ Ready for tasks — 0 steps")
+            lbl_thinking_badge.config(text="0/0")
+            telemetry_tree.delete(*telemetry_tree.get_children())
+            
+            chat_box.insert("end", "🤖 Neo Agent Studio v3.0\n", "assistant")
+            chat_box.insert("end", "Online and ready! How can I assist you with your project today?\n\n", "system")
+            chat_box.insert("end", "💡 Quick Actions:\n", "what_i_did")
+            chat_box.insert("end", "• ⚡ Web App: Build a complete 3-page interactive app with functional buttons & gradients.\n", "what_i_did_item")
+            chat_box.insert("end", "• 🐞 Auto-Fix: Recursively scan & repair bugs or typos across all files in your workspace.\n", "what_i_did_item")
+            chat_box.insert("end", "• 👁 Vision: Capture your screen to diagnose IDE errors or app tracebacks.\n", "what_i_did_item")
+            chat_box.insert("end", "• ✨ Demo Showcase: Preview the IBM Watsonx partner intelligence multi-agent workflow.\n\n", "what_i_did_item")
+
+        # Initialize with clean fresh session
+        reset_chat_view()
 
         if default_tab > 0:
             notebook.select(default_tab)

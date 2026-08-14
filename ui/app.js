@@ -1439,6 +1439,5 @@ Citigroup's massive outsourcing ratio creates prime opportunities to embed IBM t
     initWebSocket();
     loadModels();
     fetchFiles();
-    renderShowcaseDemo();
 });
 
