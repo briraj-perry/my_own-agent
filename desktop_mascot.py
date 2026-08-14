@@ -74,6 +74,12 @@ MASCOT_THEMES = {
         "idle": "crystal_bot_idle.png",
         "coding": "crystal_bot_coding.png"
     },
+    "eagle_bot": {
+        "name": "🦅 Eagle Bot (Chief Quality & Auto-Repair Sentinel)",
+        "desc": "Autonomous Code Quality Sentinel & Review Specialist",
+        "idle": "crystal_bot_idle.png",
+        "coding": "crystal_bot_coding.png"
+    },
 
 
     "pixel_bot": {
@@ -166,6 +172,7 @@ class FloatingMascotApp:
         # Build Context Menu
         self.context_menu = tk.Menu(self.root, tearoff=0, bg="#120e20", fg="#00f5d4", activebackground="#7b2cbf", activeforeground="#ffffff", font=("Segoe UI", 9, "bold"))
         self.context_menu.add_command(label="💬 Open Neo Companion Studio", command=self.open_chat_dialog)
+        self.context_menu.add_command(label="🦅 Eagle Audit & Review Folder", command=self.trigger_eagle_audit)
         self.context_menu.add_command(label="⚙️ Choose Mascot Character...", command=self.open_mascot_settings)
         self.context_menu.add_command(label="📂 Open Any System Folder...", command=self.select_any_system_folder)
         self.context_menu.add_command(label="🧠 View Dynamic Execution Plan", command=lambda: self.open_chat_dialog(default_tab=1))
@@ -497,6 +504,44 @@ class FloatingMascotApp:
 
         threading.Thread(target=run_worker, daemon=True).start()
 
+    def trigger_eagle_audit(self):
+        """Triggers Eagle Agent full-folder audit, auto-repair and comprehensive app review."""
+        self.mascot_state = "thinking"
+        
+        def run_worker():
+            async def task():
+                res = await self.agent.analyze_and_review_with_eagle(self.current_folder)
+                self.root.after(0, lambda: self.show_eagle_result(res))
+            asyncio.run(task())
+
+        threading.Thread(target=run_worker, daemon=True).start()
+
+    def show_eagle_result(self, result):
+        self.mascot_state = "idle"
+        status = result.get("status")
+        msg = result.get("message", "")
+        analysis = result.get("analysis", "")
+        fixed_files = result.get("fixed_files", [])
+
+        if hasattr(self, 'current_chat_box') and self.current_chat_box and self.current_chat_box.winfo_exists():
+            self.current_chat_box.insert("end", "🦅 Eagle Agent (Audit & Review):\n", "assistant")
+            self.current_chat_box.insert("end", f"{msg}\n\n", "subagent")
+            if analysis:
+                self.current_chat_box.insert("end", f"{analysis}\n\n")
+            self.current_chat_box.see("end")
+
+        if status in ["fixed", "success"]:
+            self.mascot_state = "success"
+            fixed_names = ", ".join(f["file"] for f in fixed_files) if fixed_files else "None (Codebase verified clean!)"
+            messagebox.showinfo(
+                "🦅 Eagle Agent Audit Complete",
+                f"🎉 {msg}\n\nFiles Repaired: {fixed_names}\n\nSee the Live Chat Tab for the full Application Quality Review!"
+            )
+        elif status == "clean":
+            messagebox.showinfo("🦅 Eagle Agent Audit Complete", msg)
+        else:
+            messagebox.showwarning("🦅 Eagle Agent Notice", f"⚠️ {msg}")
+
     def show_autofix_result(self, title, result):
         self.mascot_state = "idle"
         status = result.get("status")
@@ -509,10 +554,6 @@ class FloatingMascotApp:
             messagebox.showinfo(title, msg)
         else:
             messagebox.showwarning(title, f"⚠️ Diagnostic Notice:\n{msg}")
-
-    def open_dashboard_browser(self):
-        import webbrowser
-        webbrowser.open("http://127.0.0.1:8000")
 
     def open_dashboard_browser(self):
         import webbrowser
@@ -649,6 +690,7 @@ class FloatingMascotApp:
 
         chat_box = tk.Text(chat_tab, bg="#030712", fg="#cbd5e1", font=("Segoe UI", 10), wrap="word", highlightthickness=1, highlightbackground="#334155", bd=0, padx=10, pady=10)
         chat_box.pack(fill="both", expand=True, padx=8, pady=8)
+        self.current_chat_box = chat_box
 
         # Premium tag formatting — IBM Watsonx inspired
         chat_box.tag_config("user", foreground="#818cf8", font=("Segoe UI", 10, "bold"), spacing1=6)
@@ -687,6 +729,7 @@ class FloatingMascotApp:
             return btn
 
         make_pill(quick_bar, "🔄 New Chat", lambda: reset_chat_view(), bg="#1e293b", fg="#38bdf8", active_bg="#0369a1", active_fg="#ffffff")
+        make_pill(quick_bar, "🦅 Eagle Audit", lambda: self.trigger_eagle_audit(), bg="#1e1b4b", fg="#a5b4fc", active_bg="#4338ca", active_fg="#ffffff")
         make_pill(quick_bar, "✨ Demo Showcase", lambda: render_desktop_showcase_demo(), bg="#4f46e5", fg="#ffffff", active_bg="#6366f1", active_fg="#ffffff")
         make_pill(quick_bar, "🏢 Partners Intel", lambda: quick_prompt("What IBM Business Partners are actively working at Citigroup in the USA? Can you identify the areas they are working in? Are there opportunities to sell IBM technology in those areas through those partners? Explain why."))
         make_pill(quick_bar, "⚡ Web App", lambda: quick_prompt("Build a complete modern Task Management Web App with interactive filters and dark mode"))

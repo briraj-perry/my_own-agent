@@ -187,7 +187,7 @@ class TestAgentCore(unittest.TestCase):
                 ("interface", ["architecture"]),
                 ("styling", ["architecture", "interface"]),
                 ("implementation", ["architecture", "interface", "styling"]),
-                ("quality", ["interface", "implementation", "styling"]),
+                ("eagle", ["interface", "implementation", "styling"]),
             ],
         )
 

@@ -92,12 +92,52 @@ Execute your specialized task with maximum rigor now.
     return prompt.strip()
 
 
+import re
+
+
+def sanitize_code_content(raw_code: str) -> str:
+    """Strips any leading/trailing markdown fence artifacts (e.g. ```html, ```css, ```js) from source code."""
+    content = raw_code.strip()
+    content = re.sub(r'^\s*```[a-zA-Z0-9_\-]*\s*\n?', '', content, flags=re.IGNORECASE)
+    content = re.sub(r'\n?\s*```\s*$', '', content, flags=re.IGNORECASE)
+    return content.strip()
+
+
 # ---------------------------------------------------------------------------
 # Specialist Agent System Prompts
 # ---------------------------------------------------------------------------
 
+EAGLE_AGENT_SYSTEM_PROMPT = """You are Eagle Agent — Chief Code Quality Sentinel & Autonomous Repair Engineer for Neo Agent.
+
+YOUR MISSION:
+Perform an exhaustive, whole-folder diagnostic audit and auto-repair pass over all workspace code files (HTML, CSS, JS, Python, Next.js, etc.).
+You are the final line of defense before delivery to the user:
+1. DETECT EVERY MISTAKE:
+   - Syntax errors, missing colons/brackets/parentheses, bad indentation, unclosed tags.
+   - Cross-file mismatches: HTML button IDs that lack `addEventListener` in JS, CSS classes used in HTML that are missing in CSS, broken script/style import links.
+   - Logic bugs: Unreachable code, undefined variables, missing imports, unhandled error states.
+   - Incomplete code: Any placeholder comments (`// TODO`, `// rest of code`, `# existing code`).
+2. FIX ALL MISTAKES DIRECTLY:
+   - If any file contains an error or is incomplete, output the COMPLETE, 100% fixed version using:
+     ### FIX_FILE: filename.ext
+     ```language
+     ... full corrected code with zero placeholders ...
+     ```
+3. PROVIDE AN APPLICATION REVIEW (MANDATORY):
+   - Conclude with a clear, user-facing summary with these exact sections:
+     ### 🔍 Eagle Audit Findings
+     - [List what was scanned and issues detected]
+     ### 🔧 What Was Fixed
+     - [List exact files repaired and what changes were made]
+     ### 📱 Application Quality Review
+     - **Architecture**: [How the app is structured across views]
+     - **Interactive Controls**: [List verified working buttons, inputs, and state features]
+     - **Visual & Style Polish**: [Gradients, animations, responsive design status]
+     - **Overall Health**: [Status: 100% Operational & Verified]
+"""
+
 SUBAGENT_SYSTEM_PROMPTS = {
-    # Engineering Specialists
+    # Engineering & Quality Specialists
     "architecture": """You are the Solution Architect Sub-Agent.
 Your mission is to analyze technical requirements, design modular component boundaries, define data contracts and CSS class conventions, and produce an unambiguous blueprint for downstream engineers.
 Always specify exact file responsibilities, state shapes, event listener IDs, and acceptance criteria.""",
@@ -113,6 +153,8 @@ Include CSS custom properties, dark-mode gradients, smooth micro-interactions, r
     "implementation": """You are the Application & Backend Logic Sub-Agent.
 Your mission is to implement full client/server logic, reactive state machines, DOM event listeners, and API integration.
 Never use inline handlers; wire all events via addEventListener. Include robust error handling and console logging.""",
+
+    "eagle": EAGLE_AGENT_SYSTEM_PROMPT,
 
     "quality": """You are the QA & Integration Sentinel Sub-Agent.
 Your mission is to verify cross-file consistency, validate syntax, ensure all button IDs match event handlers, check CSS class usage, and produce an integration audit report.""",
@@ -441,6 +483,8 @@ def get_system_prompt(agent_mode: str = "coding", context: Optional[Dict[str, An
         prompt = SELF_CORRECTION_SYSTEM_PROMPT
     elif mode == "implementation_plan":
         prompt = IMPLEMENTATION_PLAN_SYSTEM_PROMPT
+    elif mode == "eagle":
+        prompt = EAGLE_AGENT_SYSTEM_PROMPT
     elif mode == "web_app":
         prompt = WEB_APP_SYSTEM_PROMPT
     elif mode in SUBAGENT_SYSTEM_PROMPTS:

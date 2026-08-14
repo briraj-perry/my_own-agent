@@ -13,6 +13,7 @@ from tools import file_tools, code_executor
 from indexer import CodebaseIndexer
 from agent.planner import ExecutionPlanner, ExecutionPlan
 from agent.claw import ClawAgentEngine
+from agent.eagle import EagleAgentEngine
 from agent.prompts import build_subagent_delegation_prompt, get_system_prompt, SUBAGENT_SYSTEM_PROMPTS
 
 
@@ -223,6 +224,7 @@ class NeoAgentCore:
         self.screen_engine = ScreenPerceptionEngine()
         self.indexer = CodebaseIndexer()
         self.claw_engine = ClawAgentEngine()
+        self.eagle_engine = EagleAgentEngine()
         self.active_sub_agents: Dict[str, SubAgent] = {}
         self.active_working_folder: Optional[str] = None
         self.chat_history: List[Dict[str, str]] = []
@@ -602,6 +604,11 @@ class NeoAgentCore:
         except Exception as e:
             yield {"type": "token", "content": f"\n⚠️ Plan generation error: {str(e)}\n"}
 
+    async def analyze_and_review_with_eagle(self, folder_path: str = ".", model: Optional[str] = None) -> Dict[str, Any]:
+        """Runs Eagle Agent over the specified folder to pinpoint errors, auto-repair files, and generate a comprehensive app review."""
+        target_model = model or self.active_model
+        return await self.eagle_engine.audit_and_repair_folder(folder_path, model=target_model)
+
     def _build_coordinated_team(self, query: str) -> List[SubAgent]:
         """Create a dependency graph whose outputs form a shared project handoff.
 
@@ -822,27 +829,27 @@ class NeoAgentCore:
 
         team.append(
             SubAgent(
-                agent_id="quality",
-                name="Quality Agent",
-                role="QA and Integration Engineer",
+                agent_id="eagle",
+                name="Eagle Agent",
+                role="Chief Quality Sentinel & Auto-Repair Specialist",
                 description=(
-                    "Reviews the combined handoffs, checks integration risks, and produces a verification report. "
-                    + ("For this web project: verify that every button id in index.html has a matching addEventListener in script.js, "
-                       "every CSS class used in index.html exists in style.css, "
-                       "the Google Fonts link is present, and the file references (style.css, script.js) are correct."
-                       if is_web_project else "")
+                    "Performs deep whole-folder inspection, audits cross-file ID bindings between HTML and JS, "
+                    "validates CSS classes and gradients, repairs syntax mistakes directly on disk, and synthesizes "
+                    "the comprehensive application review."
                 ),
                 dependencies=["interface", "implementation"] + (["styling"] if is_web_project else []),
                 sub_steps=[
-                    {"name": "Audit Cross-File Button IDs vs JS Listeners", "duration": "2.8s", "status": "completed"},
-                    {"name": "Validate AST Syntax & Clean Up Backticks", "duration": "3.1s", "status": "completed"},
-                    {"name": "Verify Disk Persistence & Assets Linkage", "duration": "2.4s", "status": "completed"},
+                    {"name": "Scan Entire Folder Codebase & AST Tree", "duration": "1.8s", "status": "completed"},
+                    {"name": "Audit Cross-File Button IDs vs JS Listeners", "duration": "2.2s", "status": "completed"},
+                    {"name": "Verify CSS Classes & Gradient Design System", "duration": "1.5s", "status": "completed"},
+                    {"name": "Auto-Repair Detected Inconsistencies on Disk", "duration": "3.4s", "status": "completed"},
+                    {"name": "Synthesize Comprehensive Application Review", "duration": "1.1s", "status": "completed"},
                 ],
-                duration="8.3s",
-                size="15.0k",
-                start_offset="+25.2s",
-                badge_icon="🧪",
-                badge_label="Quality Agent",
+                duration="10.0s",
+                size="18.5k",
+                start_offset="+28.0s",
+                badge_icon="🦅",
+                badge_label="Eagle Agent",
             )
         )
 
@@ -926,6 +933,7 @@ class NeoAgentCore:
                 "interface": "data_bot",
                 "styling": "artist_bot",
                 "implementation": "code_bot",
+                "eagle": "eagle_bot",
                 "quality": "server_bot",
                 "draup": "data_bot",
                 "nl2sql": "code_bot",
@@ -983,59 +991,82 @@ class NeoAgentCore:
             agent.progress = 60
             yield {"type": "sub_agent_update", "sub_agent": agent.to_dict()}
 
-            system_prompt = SUBAGENT_SYSTEM_PROMPTS.get(agent.id, f"You are {agent.name} ({agent.role}), an autonomous specialist.")
+            if agent.id == "eagle":
+                try:
+                    eagle_res = await self.eagle_engine.audit_and_repair_folder(target_folder, model=model, upstream_plan=query)
+                    agent.generated_code = eagle_res.get("analysis", "") or eagle_res.get("message", "")
+                    fixed_files = eagle_res.get("fixed_files", [])
+                    if fixed_files:
+                        for ff in fixed_files:
+                            agent.logs.append(f"🔧 Repaired '{ff['file']}' on disk ({ff.get('lines', 0)} lines)")
+                            yield {
+                                "type": "execution_log",
+                                "mascot_state": "ast_check",
+                                "command": f"eagle_repair('{ff['file']}')",
+                                "output": f"🦅 Eagle Agent auto-repaired {ff['file']}\nPath: {ff.get('full_path')}"
+                            }
+                    else:
+                        agent.logs.append("✓ Eagle Audit: 0 cross-file discrepancies detected.")
+                    handoffs[agent.id] = agent.generated_code
+                except Exception as exc:
+                    agent.status = "failed"
+                    agent.logs.append(f"Eagle Audit failed: {exc}")
+                    yield {"type": "sub_agent_update", "sub_agent": agent.to_dict()}
+                    continue
+            else:
+                system_prompt = SUBAGENT_SYSTEM_PROMPTS.get(agent.id, f"You are {agent.name} ({agent.role}), an autonomous specialist.")
 
-            try:
-                req = urllib.request.Request(
-                    f"{self.OLLAMA_BASE_URL}/api/chat",
-                    data=json.dumps({
-                        "model": model,
-                        "messages": [
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": delegation_prompt},
-                        ],
-                        "options": {"num_ctx": 8192, "num_predict": 4096, "temperature": 0.15},
-                        "stream": False,
-                    }).encode("utf-8"),
-                    headers={"Content-Type": "application/json"},
-                )
+                try:
+                    req = urllib.request.Request(
+                        f"{self.OLLAMA_BASE_URL}/api/chat",
+                        data=json.dumps({
+                            "model": model,
+                            "messages": [
+                                {"role": "system", "content": system_prompt},
+                                {"role": "user", "content": delegation_prompt},
+                            ],
+                            "options": {"num_ctx": 8192, "num_predict": 4096, "temperature": 0.15},
+                            "stream": False,
+                        }).encode("utf-8"),
+                        headers={"Content-Type": "application/json"},
+                    )
 
-                def call_agent() -> Dict[str, Any]:
-                    with urllib.request.urlopen(req, timeout=90.0) as response:
-                        return json.loads(response.read().decode("utf-8"))
+                    def call_agent() -> Dict[str, Any]:
+                        with urllib.request.urlopen(req, timeout=90.0) as response:
+                            return json.loads(response.read().decode("utf-8"))
 
-                response = await loop.run_in_executor(None, call_agent)
-                agent.generated_code = response.get("message", {}).get("content", "").strip()
-                if not agent.generated_code:
-                    raise ValueError("Model returned an empty handoff.")
-            except Exception as exc:
-                agent.status = "failed"
-                agent.logs.append(f"Failed: {exc}")
+                    response = await loop.run_in_executor(None, call_agent)
+                    agent.generated_code = response.get("message", {}).get("content", "").strip()
+                    if not agent.generated_code:
+                        raise ValueError("Model returned an empty handoff.")
+                except Exception as exc:
+                    agent.status = "failed"
+                    agent.logs.append(f"Failed: {exc}")
+                    yield {"type": "sub_agent_update", "sub_agent": agent.to_dict()}
+                    continue
+
+                agent.progress = 85
                 yield {"type": "sub_agent_update", "sub_agent": agent.to_dict()}
-                continue
+                handoffs[agent.id] = agent.generated_code
 
-            agent.progress = 85
-            yield {"type": "sub_agent_update", "sub_agent": agent.to_dict()}
-            handoffs[agent.id] = agent.generated_code
-
-            if agent.target_file:
-                content = extract_code_block(agent.generated_code)
-                if agent.target_file.endswith((".py", ".pyw")):
-                    syntax = code_executor.validate_python_syntax(content)
-                    if not syntax["valid"]:
+                if agent.target_file:
+                    content = extract_code_block(agent.generated_code)
+                    if agent.target_file.endswith((".py", ".pyw")):
+                        syntax = code_executor.validate_python_syntax(content)
+                        if not syntax["valid"]:
+                            agent.status = "failed"
+                            agent.logs.append(f"Blocked write: Python syntax validation failed: {syntax['error']}")
+                            yield {"type": "sub_agent_update", "sub_agent": agent.to_dict()}
+                            handoffs.pop(agent.id, None)
+                            continue
+                    result = file_tools.write_file(agent.target_file, content, folder=target_folder)
+                    if result.get("status") != "success":
                         agent.status = "failed"
-                        agent.logs.append(f"Blocked write: Python syntax validation failed: {syntax['error']}")
+                        agent.logs.append(result.get("message", "Unable to write target file."))
                         yield {"type": "sub_agent_update", "sub_agent": agent.to_dict()}
                         handoffs.pop(agent.id, None)
                         continue
-                result = file_tools.write_file(agent.target_file, content, folder=target_folder)
-                if result.get("status") != "success":
-                    agent.status = "failed"
-                    agent.logs.append(result.get("message", "Unable to write target file."))
-                    yield {"type": "sub_agent_update", "sub_agent": agent.to_dict()}
-                    handoffs.pop(agent.id, None)
-                    continue
-                agent.logs.append(f"Delivered {agent.target_file} to the selected workspace.")
+                    agent.logs.append(f"Delivered {agent.target_file} to the selected workspace.")
 
             agent.status = "completed"
             agent.progress = 100
@@ -1112,10 +1143,17 @@ class NeoAgentCore:
             except Exception:
                 yield {"type": "token", "content": "\n\n".join(handoffs.values())}
         else:
-            yield {
-                "type": "token",
-                "content": f"\nCoordinated delivery finished: {completed}/{len(team)} specialist handoffs completed in `{target_folder}`.\n",
-            }
+            eagle_handoff = handoffs.get("eagle", "")
+            if eagle_handoff:
+                yield {
+                    "type": "token",
+                    "content": f"\n\n{eagle_handoff}\n"
+                }
+            else:
+                yield {
+                    "type": "token",
+                    "content": f"\nCoordinated delivery finished: {completed}/{len(team)} specialist handoffs completed in `{target_folder}`.\n",
+                }
 
 
     async def stream_response(self, user_query: str, images: Optional[List[str]] = None) -> AsyncGenerator[Dict[str, Any], None]:

@@ -1428,6 +1428,16 @@ Citigroup's massive outsourcing ratio creates prime opportunities to embed IBM t
         });
     });
 
+    const eagleAuditBtn = document.getElementById('eagle-audit-btn');
+    if (eagleAuditBtn) {
+        eagleAuditBtn.addEventListener('click', () => {
+            if (userInput && chatForm) {
+                userInput.value = "🦅 Run Eagle Agent: perform a whole-folder deep audit, auto-repair all broken handlers/syntax on disk, and synthesize an application review.";
+                chatForm.dispatchEvent(new Event('submit'));
+            }
+        });
+    }
+
     const loadShowcaseBtn = document.getElementById('load-showcase-btn');
     if (loadShowcaseBtn) {
         loadShowcaseBtn.addEventListener('click', () => {

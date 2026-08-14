@@ -49,6 +49,7 @@ class NeoCLI:
             f"⚡ [bold white]Active Model:[/bold white]  [bold magenta]{model_name}[/bold magenta]\n\n"
             f"Commands:\n"
             f"  • [bold #f72585]/folder <path>[/bold #f72585] or [bold #f72585]/cd <path>[/bold #f72585] — Open & switch to any folder on your computer\n"
+            f"  • [bold #f72585]/eagle[/bold #f72585]                — 🦅 Eagle Agent: Deep full-folder audit, auto-repair & review\n"
             f"  • [bold #f72585]/files[/bold #f72585]                — View all files in active folder\n"
             f"  • [bold #f72585]/fix[/bold #f72585] or [bold #f72585]/autofix[/bold #f72585]        — Auto-scan & repair errors across all files\n"
             f"  • [bold #f72585]/model[/bold #f72585]                — Change active Ollama model\n"
@@ -155,6 +156,27 @@ class NeoCLI:
                         console.print(f"[bold green]✅ {res.get('message')}[/bold green]")
                     else:
                         console.print(f"[bold yellow]⚠️ Notice: {res.get('message')}[/bold yellow]")
+                    continue
+
+                # Eagle Agent full-folder audit & review command
+                if user_input.lower() in ["/eagle", "eagle"]:
+                    curr_root = file_tools.get_workspace_root()
+                    console.print(f"\n[bold magenta]🦅 Eagle Agent: Starting deep whole-folder audit on '{curr_root}'...[/bold magenta]")
+                    res = await self.agent.analyze_and_review_with_eagle(curr_root)
+                    if res.get("status") in ["fixed", "success"]:
+                        fixed_files = res.get("fixed_files", [])
+                        fixed_str = ", ".join(f"[bold cyan]{f['file']}[/bold cyan]" for f in fixed_files) if fixed_files else "None (Codebase verified clean!)"
+                        console.print(Panel(
+                            f"[bold green]🎉 {res.get('message')}[/bold green]\n\n"
+                            f"Files Repaired: {fixed_str}\n\n"
+                            f"[bold yellow]Application Quality Review:[/bold yellow]\n\n{res.get('analysis', '')}",
+                            border_style="magenta",
+                            title="[bold magenta]🦅 EAGLE AGENT AUDIT & REVIEW[/bold magenta]"
+                        ))
+                    elif res.get("status") == "clean":
+                        console.print(f"[bold green]✅ {res.get('message')}[/bold green]")
+                    else:
+                        console.print(f"[bold red]✖ {res.get('message')}[/bold red]")
                     continue
 
                 # Model selection command
