@@ -203,11 +203,56 @@ class TestAgentCore(unittest.TestCase):
 
         events = asyncio.run(collect_events())
         self.assertEqual(events[0]["type"], "coordination_update")
+        self.assertEqual(events[1]["type"], "agent_thinking_init")
+        self.assertGreater(events[1]["total_steps"], 0)
         updates = [event for event in events if event["type"] == "sub_agent_update"]
         self.assertEqual(len(updates), len(team))
         self.assertTrue(all(event["sub_agent"]["status"] == "failed" for event in updates))
 
+    def test_subagent_delegation_prompt_builder(self):
+        """Test build_subagent_delegation_prompt creates structured mission-critical prompts."""
+        from agent.prompts import build_subagent_delegation_prompt
+        prompt = build_subagent_delegation_prompt(
+            agent_name="Experience Agent",
+            agent_role="UI Engineer",
+            mission_goal="Build responsive semantic HTML5 layout.",
+            query="Build a dashboard web app",
+            target_file="index.html",
+            dependencies=["architecture"],
+            upstream_handoffs={"architecture": "Use dark theme palette: #0a0a0f with blue accents."},
+            workspace_context="Target folder: ./dashboard",
+            constraints=["ZERO PLACEHOLDERS: Generate 100% complete code.", "Include unique IDs on all buttons."]
+        )
+        self.assertIn("YOUR CORE MISSION & OBJECTIVES", prompt)
+        self.assertIn("UPSTREAM ARTIFACTS & HANDOFF CONTEXT", prompt)
+        self.assertIn("MANDATORY EXECUTION CONSTRAINTS", prompt)
+        self.assertIn("Use dark theme palette: #0a0a0f", prompt)
+        self.assertIn("TARGET DELIVERABLE: index.html", prompt)
+
+
+    def test_research_intelligence_team_and_22_substeps(self):
+        """Test research query builds 4-agent DAG with 22 sub-steps and rich telemetry."""
+        core = NeoAgentCore()
+        query = "What IBM Business Partners are actively working at Citigroup in the USA? Can you identify the areas they are working in?"
+        team = core._build_coordinated_team(query)
+        self.assertEqual(
+            [(agent.id, agent.dependencies) for agent in team],
+            [
+                ("draup", []),
+                ("nl2sql", ["draup"]),
+                ("coverage", ["draup", "nl2sql"]),
+                ("design_in", ["draup", "nl2sql", "coverage"]),
+            ]
+        )
+        total_substeps = sum(len(a.sub_steps) for a in team)
+        self.assertEqual(total_substeps, 22)
+        draup = team[0]
+        self.assertEqual(draup.duration, "10.8s")
+        self.assertEqual(draup.size, "56.2k")
+        self.assertEqual(draup.start_offset, "+5.7s")
+        self.assertEqual(len(draup.sub_steps), 6)
 
 
 if __name__ == "__main__":
     unittest.main()
+
