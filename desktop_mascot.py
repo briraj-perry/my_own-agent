@@ -580,10 +580,11 @@ class FloatingMascotApp:
             return
 
         self.chat_window = tk.Toplevel(self.root)
-        self.chat_window.title("my_neo-agent Companion Studio v2.0")
-        self.chat_window.geometry("780x820")
+        self.chat_window.title("Neo Agent Studio — Premium AI Companion")
+        self.chat_window.geometry("850x880")
         self.chat_window.attributes("-topmost", True)
-        self.chat_window.config(bg="#090d16")
+        self.chat_window.config(bg="#060a12")
+        self.chat_window.minsize(700, 600)
 
         # Apply ttk Professional Dark Theme Styles
         style = ttk.Style()
@@ -597,20 +598,41 @@ class FloatingMascotApp:
         style.configure('Treeview.Heading', background='#1e293b', foreground='#38bdf8', font=('Segoe UI', 9, 'bold'))
         style.map('Treeview', background=[('selected', '#4f46e5')], foreground=[('selected', '#ffffff')])
 
-        # Top Header Bar
-        header_frame = tk.Frame(self.chat_window, bg="#0f172a", height=54, highlightthickness=1, highlightbackground="#334155")
+        # ═══════════════════════════════════════════════
+        # Premium Header Bar — IBM Watsonx Inspired
+        # ═══════════════════════════════════════════════
+        header_frame = tk.Frame(self.chat_window, bg="#0a0f1a", height=60, highlightthickness=0)
         header_frame.pack(fill="x", side="top")
+        header_frame.pack_propagate(False)
 
-        title_lbl = tk.Label(header_frame, text=" ⚡ my_neo-agent Companion Studio", bg="#0f172a", fg="#f8fafc", font=("Outfit", 13, "bold"))
-        title_lbl.pack(side="left", padx=14, pady=10)
+        # Status dot + Title
+        status_dot = tk.Label(header_frame, text="●", bg="#0a0f1a", fg="#10b981", font=("Segoe UI", 10))
+        status_dot.pack(side="left", padx=(16, 4), pady=14)
 
-        btn_settings = tk.Button(header_frame, text="⚙️ Mascots", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 9, "bold"), bd=0, command=self.open_mascot_settings)
-        btn_settings.pack(side="right", padx=(0, 12))
+        title_lbl = tk.Label(header_frame, text="Neo Agent Studio", bg="#0a0f1a", fg="#f8fafc", font=("Segoe UI", 14, "bold"))
+        title_lbl.pack(side="left", pady=14)
 
+        version_lbl = tk.Label(header_frame, text="v3.0", bg="#0a0f1a", fg="#64748b", font=("Segoe UI", 9))
+        version_lbl.pack(side="left", padx=(6, 0), pady=14)
+
+        # Right side controls
+        btn_settings = tk.Button(header_frame, text="⚙ Mascots", bg="#1e293b", fg="#94a3b8", font=("Segoe UI", 9, "bold"), bd=0, relief="flat", activebackground="#334155", activeforeground="#f8fafc", cursor="hand2", command=self.open_mascot_settings)
+        btn_settings.pack(side="right", padx=(0, 14), ipady=4, ipadx=10)
+
+        # Model badge
+        model_name = self.agent.active_model.split(":")[0] if ":" in self.agent.active_model else self.agent.active_model
+        model_lbl = tk.Label(header_frame, text=f"⚡ {model_name}", bg="#1e1b4b", fg="#a5b4fc", font=("Segoe UI", 8, "bold"), padx=10, pady=3)
+        model_lbl.pack(side="right", padx=(0, 8))
+
+        # Folder breadcrumb
         curr_p = file_tools.get_workspace_root()
         disp_folder = os.path.basename(curr_p) or curr_p
-        folder_lbl = tk.Label(header_frame, text=f"📁 {disp_folder}", bg="#1e293b", fg="#38bdf8", font=("Consolas", 9, "bold"), padx=12, pady=4)
-        folder_lbl.pack(side="right", padx=6)
+        folder_lbl = tk.Label(header_frame, text=f"📁 {disp_folder}", bg="#0f172a", fg="#38bdf8", font=("Consolas", 9, "bold"), padx=10, pady=3)
+        folder_lbl.pack(side="right", padx=(0, 8))
+
+        # Subtle bottom accent line
+        accent_line = tk.Frame(self.chat_window, bg="#312e81", height=2)
+        accent_line.pack(fill="x")
 
         # Tabbed Notebook Layout
         notebook = ttk.Notebook(self.chat_window)
@@ -625,40 +647,48 @@ class FloatingMascotApp:
         chat_box = tk.Text(chat_tab, bg="#030712", fg="#cbd5e1", font=("Segoe UI", 10), wrap="word", highlightthickness=1, highlightbackground="#334155", bd=0, padx=10, pady=10)
         chat_box.pack(fill="both", expand=True, padx=8, pady=8)
 
-        # Tags formatting for sleek dark theme
-        chat_box.tag_config("user", foreground="#818cf8", font=("Segoe UI", 10, "bold"))
-        chat_box.tag_config("assistant", foreground="#38bdf8", font=("Segoe UI", 10, "bold"))
-        chat_box.tag_config("system", foreground="#94a3b8", font=("Segoe UI", 9, "italic"))
-        chat_box.tag_config("plan", foreground="#c084fc", font=("Consolas", 9, "bold"))
+        # Premium tag formatting — IBM Watsonx inspired
+        chat_box.tag_config("user", foreground="#818cf8", font=("Segoe UI", 10, "bold"), spacing1=6)
+        chat_box.tag_config("user_msg", foreground="#e2e8f0", font=("Segoe UI", 10), lmargin1=16, lmargin2=16, spacing3=8, background="#1e1b4b")
+        chat_box.tag_config("assistant", foreground="#38bdf8", font=("Segoe UI", 10, "bold"), spacing1=10)
+        chat_box.tag_config("system", foreground="#64748b", font=("Segoe UI", 9, "italic"), lmargin1=8)
+        chat_box.tag_config("plan", foreground="#c084fc", font=("Consolas", 9, "bold"), lmargin1=8)
+        chat_box.tag_config("plan_card", foreground="#e2e8f0", font=("Segoe UI", 10), background="#0f172a", lmargin1=12, lmargin2=12, spacing1=4, spacing3=4)
         chat_box.tag_config("subagent", foreground="#34d399", font=("Segoe UI", 9, "bold"))
-        chat_box.tag_config("thinking_card", foreground="#a5b4fc", font=("Consolas", 9, "bold"))
-        chat_box.tag_config("section_hdr", foreground="#38bdf8", font=("Segoe UI", 11, "bold"))
-        chat_box.tag_config("table_row", foreground="#e2e8f0", font=("Consolas", 9))
-        chat_box.tag_config("what_i_did", foreground="#34d399", font=("Segoe UI", 10, "bold"))
+        chat_box.tag_config("thinking_card", foreground="#a5b4fc", font=("Segoe UI", 9, "bold"), background="#1e1b4b", lmargin1=8, spacing1=4, spacing3=4)
+        chat_box.tag_config("section_hdr", foreground="#6366f1", font=("Segoe UI", 12, "bold"), spacing1=12, spacing3=4)
+        chat_box.tag_config("table_row", foreground="#e2e8f0", font=("Consolas", 9), background="#0f172a", lmargin1=8)
+        chat_box.tag_config("what_i_did", foreground="#10b981", font=("Segoe UI", 10, "bold"), spacing1=10, lmargin1=4)
+        chat_box.tag_config("what_i_did_item", foreground="#94a3b8", font=("Segoe UI", 9), lmargin1=16, lmargin2=20)
+        chat_box.tag_config("code_block", foreground="#38bdf8", font=("Consolas", 9), background="#0d1117", lmargin1=12, lmargin2=12, spacing1=4, spacing3=4)
+        chat_box.tag_config("divider", foreground="#1e293b", font=("Segoe UI", 6))
 
-        # Quick Action Prompt Bar
+        # ═══════════════════════════════════════════════
+        # Premium Quick Action Pills
+        # ═══════════════════════════════════════════════
         quick_bar = tk.Frame(chat_tab, bg="#090d16")
-        quick_bar.pack(fill="x", padx=8, pady=(0, 4))
+        quick_bar.pack(fill="x", padx=8, pady=(0, 6))
 
         def quick_prompt(text):
             entry.delete(0, "end")
             entry.insert(0, text)
             send_msg()
 
-        btn_showcase = tk.Button(quick_bar, text="✨ Demo Showcase", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: render_desktop_showcase_demo())
-        btn_showcase.pack(side="left", padx=(0, 4), ipady=4, ipadx=8)
+        # Pill button factory
+        def make_pill(parent, text, command, bg="#1e293b", fg="#94a3b8", active_bg="#312e81", active_fg="#f8fafc"):
+            btn = tk.Button(parent, text=text, bg=bg, fg=fg, font=("Segoe UI", 8, "bold"), bd=0, relief="flat", cursor="hand2", activebackground=active_bg, activeforeground=active_fg, command=command)
+            btn.pack(side="left", padx=(0, 6), ipady=5, ipadx=12)
+            # Hover bindings
+            btn.bind("<Enter>", lambda e, b=btn: b.config(bg=active_bg, fg=active_fg))
+            btn.bind("<Leave>", lambda e, b=btn: b.config(bg=bg, fg=fg))
+            return btn
 
-        btn_partner = tk.Button(quick_bar, text="🏢 Citigroup Partners", bg="#1e293b", fg="#38bdf8", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: quick_prompt("What IBM Business Partners are actively working at Citigroup in the USA? Can you identify the areas they are working in? Are there opportunities to sell IBM technology in those areas through those partners? Explain why."))
-        btn_partner.pack(side="left", padx=(0, 4), ipady=4, ipadx=8)
-
-        btn_app = tk.Button(quick_bar, text="⚡ Web App", bg="#1e293b", fg="#cbd5e1", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: quick_prompt("Build a complete modern Task Management Web App with interactive filters and dark mode"))
-        btn_app.pack(side="left", padx=(0, 4), ipady=4, ipadx=8)
-
-        btn_fix = tk.Button(quick_bar, text="🐞 Auto-Fix", bg="#1e293b", fg="#cbd5e1", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: self.trigger_folder_analysis())
-        btn_fix.pack(side="left", padx=(0, 4), ipady=4, ipadx=8)
-
-        btn_screen = tk.Button(quick_bar, text="👁️ Vision Debug", bg="#1e293b", fg="#cbd5e1", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: self.trigger_screen_analysis())
-        btn_screen.pack(side="left", padx=(0, 4), ipady=4, ipadx=8)
+        make_pill(quick_bar, "✨ Demo Showcase", lambda: render_desktop_showcase_demo(), bg="#4f46e5", fg="#ffffff", active_bg="#6366f1", active_fg="#ffffff")
+        make_pill(quick_bar, "🏢 Partners Intel", lambda: quick_prompt("What IBM Business Partners are actively working at Citigroup in the USA? Can you identify the areas they are working in? Are there opportunities to sell IBM technology in those areas through those partners? Explain why."))
+        make_pill(quick_bar, "⚡ Web App", lambda: quick_prompt("Build a complete modern Task Management Web App with interactive filters and dark mode"))
+        make_pill(quick_bar, "🐞 Auto-Fix", lambda: self.trigger_folder_analysis(), bg="#1e293b", fg="#f87171", active_bg="#7f1d1d", active_fg="#fca5a5")
+        make_pill(quick_bar, "👁 Vision", lambda: self.trigger_screen_analysis())
+        make_pill(quick_bar, "📂 Folder", lambda: self.select_any_system_folder())
 
         # Attachment status row
         attach_frame = tk.Frame(chat_tab, bg="#090d16")
@@ -697,8 +727,8 @@ class FloatingMascotApp:
         btn_attach = tk.Button(input_frame, text="🖼️ Image", bg="#1e293b", fg="#a5b4fc", font=("Segoe UI", 9, "bold"), bd=0, command=select_image_file)
         btn_attach.pack(side="left", padx=(0, 6), ipady=6, ipadx=10)
 
-        entry = tk.Entry(input_frame, bg="#030712", fg="#f8fafc", font=("Segoe UI", 11), insertbackground="#818cf8", bd=0, highlightthickness=1, highlightbackground="#334155")
-        entry.pack(side="left", fill="x", expand=True, padx=(0, 6), ipady=6)
+        entry = tk.Entry(input_frame, bg="#0f172a", fg="#f8fafc", font=("Segoe UI", 11), insertbackground="#818cf8", bd=0, highlightthickness=2, highlightbackground="#1e293b", highlightcolor="#6366f1")
+        entry.pack(side="left", fill="x", expand=True, padx=(0, 8), ipady=8)
 
         # ==========================================
         # Tab 2: Agent Thinking & Sub-Agents Telemetry
@@ -706,15 +736,26 @@ class FloatingMascotApp:
         plan_tab = tk.Frame(notebook, bg="#090d16")
         notebook.add(plan_tab, text="⚙️ Agent Thinking & Sub-Agents")
 
-        # Thinking Header Card
-        thinking_hdr_card = tk.Frame(plan_tab, bg="#1e1b4b", highlightthickness=1, highlightbackground="#4338ca", pady=8, padx=12)
-        thinking_hdr_card.pack(fill="x", padx=8, pady=(8, 4))
+        # ═══════════════════════════════════════════════
+        # Premium Thinking Header Card
+        # ═══════════════════════════════════════════════
+        thinking_hdr_card = tk.Frame(plan_tab, bg="#1e1b4b", highlightthickness=0, pady=10, padx=16)
+        thinking_hdr_card.pack(fill="x", padx=10, pady=(10, 6))
 
-        lbl_thinking_status = tk.Label(thinking_hdr_card, text="⚙ 22 agent steps completed — 160.8s total", bg="#1e1b4b", fg="#a5b4fc", font=("Segoe UI", 10, "bold"))
-        lbl_thinking_status.pack(side="left")
+        # Icon + status label
+        thinking_icon = tk.Label(thinking_hdr_card, text="⚙", bg="#1e1b4b", fg="#818cf8", font=("Segoe UI", 13))
+        thinking_icon.pack(side="left")
 
-        lbl_thinking_badge = tk.Label(thinking_hdr_card, text="22/22 ▼", bg="#312e81", fg="#ffffff", font=("Segoe UI", 9, "bold"), padx=8, pady=2)
-        lbl_thinking_badge.pack(side="right")
+        lbl_thinking_status = tk.Label(thinking_hdr_card, text="22 agent steps completed — generating answer...", bg="#1e1b4b", fg="#c7d2fe", font=("Segoe UI", 10, "bold"))
+        lbl_thinking_status.pack(side="left", padx=(6, 0))
+
+        # Right side badge
+        badge_frame = tk.Frame(thinking_hdr_card, bg="#312e81", padx=10, pady=3)
+        badge_frame.pack(side="right")
+        lbl_thinking_badge = tk.Label(badge_frame, text="22/22", bg="#312e81", fg="#e0e7ff", font=("Segoe UI", 9, "bold"))
+        lbl_thinking_badge.pack(side="left")
+        lbl_badge_arrow = tk.Label(badge_frame, text=" ▼", bg="#312e81", fg="#818cf8", font=("Segoe UI", 9))
+        lbl_badge_arrow.pack(side="left")
 
         # Treeview Telemetry Table
         tree_frame = tk.Frame(plan_tab, bg="#090d16")
@@ -728,10 +769,10 @@ class FloatingMascotApp:
         telemetry_tree.heading("size", text="Size")
         telemetry_tree.heading("start", text="Start")
 
-        telemetry_tree.column("#0", width=60, stretch=False, anchor="center")
-        telemetry_tree.column("operation", width=340, stretch=True)
-        telemetry_tree.column("duration", width=80, stretch=False, anchor="e")
-        telemetry_tree.column("size", width=70, stretch=False, anchor="e")
+        telemetry_tree.column("#0", width=50, stretch=False, anchor="center")
+        telemetry_tree.column("operation", width=380, stretch=True)
+        telemetry_tree.column("duration", width=70, stretch=False, anchor="e")
+        telemetry_tree.column("size", width=60, stretch=False, anchor="e")
         telemetry_tree.column("start", width=70, stretch=False, anchor="e")
 
         tree_scroll = ttk.Scrollbar(tree_frame, orient="vertical", command=telemetry_tree.yview)
@@ -855,17 +896,41 @@ class FloatingMascotApp:
             ws_files = file_tools.list_directory(curr_root)
             lbl_ws_info.config(text=f"📁 Workspace Explorer ({ws_files.get('count', 0)} items)")
             ws_txt.insert("end", f"📁 Active Folder: {curr_root}\nTotal Items: {ws_files.get('count', 0)} (Double-click file to open!)\n\n")
+            # Color-coded file type tags
+            ws_txt.tag_config("file_py", foreground="#34d399", font=("Consolas", 10))
+            ws_txt.tag_config("file_html", foreground="#f97316", font=("Consolas", 10))
+            ws_txt.tag_config("file_css", foreground="#38bdf8", font=("Consolas", 10))
+            ws_txt.tag_config("file_js", foreground="#facc15", font=("Consolas", 10))
+            ws_txt.tag_config("file_json", foreground="#a78bfa", font=("Consolas", 10))
+            ws_txt.tag_config("file_dir", foreground="#818cf8", font=("Consolas", 10, "bold"))
+            ws_txt.tag_config("file_other", foreground="#94a3b8", font=("Consolas", 10))
+
             for item in ws_files.get("items", []):
+                name = item["name"]
                 if item["type"] == "directory":
-                    icon = "📁"
-                elif item.get("is_python") or item["name"].endswith(".py") or item["name"].endswith(".pyw"):
-                    icon = "🐍"
+                    ws_txt.insert("end", f"📁 {name}/\n", "file_dir")
+                elif name.endswith(".py") or name.endswith(".pyw"):
+                    ws_txt.insert("end", f"🐍 {name}\n", "file_py")
+                elif name.endswith(".html") or name.endswith(".htm"):
+                    ws_txt.insert("end", f"🌐 {name}\n", "file_html")
+                elif name.endswith(".css"):
+                    ws_txt.insert("end", f"🎨 {name}\n", "file_css")
+                elif name.endswith(".js") or name.endswith(".jsx") or name.endswith(".ts"):
+                    ws_txt.insert("end", f"⚡ {name}\n", "file_js")
+                elif name.endswith(".json"):
+                    ws_txt.insert("end", f"📋 {name}\n", "file_json")
                 else:
-                    icon = "📄"
-                ws_txt.insert("end", f"{icon} {item['name']}\n")
+                    ws_txt.insert("end", f"📄 {name}\n", "file_other")
 
         btn_refresh_ws = tk.Button(ws_bar, text="🔄 Refresh Files", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 9, "bold"), command=refresh_ws_view)
         btn_refresh_ws.pack(side="right")
+
+        def open_in_explorer():
+            import subprocess
+            subprocess.Popen(f'explorer "{file_tools.get_workspace_root()}"')
+
+        btn_open_explorer = tk.Button(ws_bar, text="📂 Open in Explorer", bg="#1e293b", fg="#94a3b8", font=("Segoe UI", 9, "bold"), bd=0, relief="flat", cursor="hand2", command=open_in_explorer)
+        btn_open_explorer.pack(side="right", padx=(0, 8))
 
         def on_file_click(event):
             try:
@@ -1137,8 +1202,10 @@ class FloatingMascotApp:
 
             threading.Thread(target=stream_ai_worker, daemon=True).start()
 
-        send_btn = tk.Button(input_frame, text="Send 🚀", bg="#7b2cbf", fg="#ffffff", font=("Segoe UI", 10, "bold"), bd=0, command=send_msg)
-        send_btn.pack(side="right", ipady=4, ipadx=12)
+        send_btn = tk.Button(input_frame, text="Send ↗", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 10, "bold"), bd=0, relief="flat", cursor="hand2", activebackground="#6366f1", activeforeground="#ffffff", command=send_msg)
+        send_btn.pack(side="right", ipady=6, ipadx=16)
+        send_btn.bind("<Enter>", lambda e: send_btn.config(bg="#6366f1"))
+        send_btn.bind("<Leave>", lambda e: send_btn.config(bg="#4f46e5"))
         entry.bind("<Return>", lambda e: send_msg())
 
 

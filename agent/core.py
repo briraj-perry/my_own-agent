@@ -53,12 +53,12 @@ def extract_multi_file_blocks(text: str) -> Dict[str, str]:
     """Parses a multi-file LLM response into {filename: content} pairs."""
     files: Dict[str, str] = {}
     pattern = re.compile(
-        r'(?:###\s*FILE:\s*|---\s*FILE:\s*|\/\/\s*FILE:\s*|#\s*FILE:\s*)'
-        r'([a-zA-Z0-9_\-\/\\.]+\.(?:html|css|jsx?|tsx?|json|py|md|mjs|cjs))'
+        r'(?:###\s*(?:FIX_)?FILE:\s*|---\s*(?:FIX_)?FILE:\s*|\/\/\s*(?:FIX_)?FILE:\s*|#\s*(?:FIX_)?FILE:\s*)'
+        r'([a-zA-Z0-9_\-\/\\.]+\.(?:html|css|jsx?|tsx?|json|py|pyw|md|mjs|cjs|txt|cpp|c|sh|ps1))'
         r'[\s\-\*\/]*\n'
         r'(?:```[a-zA-Z]*\n)?'
         r'(.*?)'
-        r'(?:\n```|\n(?=###|\/\/\s*FILE|#\s*FILE|---\s*FILE)|$)',
+        r'(?:\n```|\n(?=###|\/\/\s*(?:FIX_)?FILE|#\s*(?:FIX_)?FILE|---\s*(?:FIX_)?FILE)|$)',
         re.DOTALL | re.IGNORECASE,
     )
     for match in pattern.finditer(text):
@@ -363,14 +363,31 @@ class NeoAgentCore:
             return {"status": "error", "message": "Ollama service offline"}
 
         system_prompt = (
-            "You are Neo Code Diagnostic & Auto-Fix Engine specializing in Python (.py) and software development.\n"
-            f"Examine the Python and source code files below from the user's active folder '{folder_path}'.\n"
-            "1. Detect any syntax errors, tracebacks, logic bugs, unclosed brackets, missing imports, or spelling mistakes in notes/text/code.\n"
-            "2. If an error is found, specify the Target File Name and output the COMPLETE corrected code inside standard markdown code blocks (```python ... ``` or ```js ... ```).\n"
-            "3. If no errors are found, reply with: 'NO_ERRORS_DETECTED'."
+            "You are Neo Code Diagnostic & Auto-Fix Engine — an expert-level multi-language code analyzer.\n"
+            f"Examine ALL source code files below from the user's active folder '{folder_path}'.\n\n"
+            "ANALYSIS PROTOCOL:\n"
+            "1. SYNTAX SCAN: Detect syntax errors, unclosed brackets, missing colons, incorrect indentation, or invalid tokens.\n"
+            "2. IMPORT VERIFICATION: Check that all imported modules exist and are used correctly.\n"
+            "3. CROSS-FILE CONSISTENCY: For web projects, verify that:\n"
+            "   - CSS classes used in HTML files actually exist in CSS files\n"
+            "   - Button IDs in HTML have matching addEventListener handlers in JS files\n"
+            "   - Script/stylesheet file references in HTML are correct\n"
+            "4. LOGIC BUGS: Detect obvious logic errors like unreachable code, infinite loops, or type mismatches.\n"
+            "5. SPELLING & TYPOS: Check variable names, function names, and string literals for common typos.\n\n"
+            "OUTPUT FORMAT:\n"
+            "- If errors are found, output a diagnostic report followed by the COMPLETE corrected file(s).\n"
+            "- Use this format for EACH file that needs fixing:\n"
+            "  ### FIX_FILE: filename.ext\n"
+            "  ### Issue: [description of the problem]\n"
+            "  ### Root Cause: [exact line/token causing the issue]\n"
+            "  ```python\n"
+            "  ... complete corrected code ...\n"
+            "  ```\n"
+            "- If fixing MULTIPLE files, output multiple ### FIX_FILE blocks.\n"
+            "- If no errors are found, reply with EXACTLY: 'NO_ERRORS_DETECTED'"
         )
 
-        user_prompt = f"Analyze and auto-fix Python files in folder '{folder_path}' (Detected {len(py_files_list)} Python files: {py_files_list}):\n\n{combined_code}"
+        user_prompt = f"Analyze and auto-fix all source files in folder '{folder_path}' (Python files: {py_files_list}, Total files: {len(code_files)}):\n\n{combined_code}"
 
         try:
             req = urllib.request.Request(
@@ -381,7 +398,7 @@ class NeoAgentCore:
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt}
                     ],
-                    "options": {"num_ctx": 4096, "temperature": 0.1},
+                    "options": {"num_ctx": 8192, "temperature": 0.1},
                     "stream": False
                 }).encode('utf-8'),
                 headers={"Content-Type": "application/json"}
@@ -403,26 +420,47 @@ class NeoAgentCore:
                     "analysis": analysis_text
                 }
 
-            # Extract fixed code and target file
-            extracted_code = extract_code_block(analysis_text)
-            fn_match = re.search(r'[\'"`]?([a-zA-Z0-9_\-\/]+\.(py|pyw|js|html|css|json|md|txt|cpp|c|sh|ps1))[\'"`]?', analysis_text, re.IGNORECASE)
-            target_filename = fn_match.group(1).strip('\'"`') if fn_match else (py_files_list[0] if py_files_list else "script.py")
+            # Try multi-file extraction first (### FIX_FILE: pattern)
+            multi_fixes = extract_multi_file_blocks(analysis_text)
+            if not multi_fixes:
+                # Fallback: try standard ### FILE: pattern
+                multi_fixes = {}
+                # Try single file extraction as last resort
+                extracted_code = extract_code_block(analysis_text)
+                fn_match = re.search(r'[\'"`]?([a-zA-Z0-9_\-\/]+\.(py|pyw|js|html|css|json|md|txt|cpp|c|sh|ps1))[\'"`]?', analysis_text, re.IGNORECASE)
+                target_filename = fn_match.group(1).strip('\'"`') if fn_match else (py_files_list[0] if py_files_list else "script.py")
+                if extracted_code and len(extracted_code) > 10:
+                    multi_fixes[target_filename] = extracted_code
 
-            # Apply fix directly to disk
-            write_res = file_tools.write_file(target_filename, extracted_code, folder=folder_path)
+            fixed_files = []
+            for fix_name, fix_content in multi_fixes.items():
+                write_res = file_tools.write_file(fix_name, fix_content, folder=folder_path)
+                if write_res.get("status") == "success":
+                    fixed_files.append({"file": fix_name, "path": write_res.get("path"), "full_path": write_res.get("full_path"), "lines": write_res.get("lines")})
+
             self.indexer.reindex()
 
-            return {
-                "status": "fixed",
-                "folder": folder_path,
-                "target_file": target_filename,
-                "python_files_scanned": py_files_list,
-                "written_path": write_res.get("path"),
-                "full_path": write_res.get("full_path"),
-                "message": f"🔧 Auto-Fixed & Saved Python/Source File on Disk: '{write_res.get('path')}' ({write_res.get('lines')} lines)",
-                "analysis": analysis_text,
-                "fixed_code": extracted_code
-            }
+            if fixed_files:
+                file_list_str = ", ".join(f"'{ff['file']}'" for ff in fixed_files)
+                return {
+                    "status": "fixed",
+                    "folder": folder_path,
+                    "target_file": fixed_files[0]["file"],
+                    "all_fixed_files": fixed_files,
+                    "python_files_scanned": py_files_list,
+                    "written_path": fixed_files[0].get("path"),
+                    "full_path": fixed_files[0].get("full_path"),
+                    "message": f"🔧 Auto-Fixed & Saved {len(fixed_files)} file(s) on Disk: {file_list_str}",
+                    "analysis": analysis_text,
+                }
+            else:
+                return {
+                    "status": "info",
+                    "folder": folder_path,
+                    "python_files_scanned": py_files_list,
+                    "message": f"Analysis complete but no actionable fixes could be extracted. See analysis for details.",
+                    "analysis": analysis_text,
+                }
 
         except Exception as e:
             return {"status": "error", "message": f"Folder Analysis Error: {str(e)}"}
@@ -475,7 +513,7 @@ class NeoAgentCore:
                         {"role": "system", "content": system_prompt},
                         user_message_obj
                     ],
-                    "options": {"num_ctx": 4096, "temperature": 0.1},
+                    "options": {"num_ctx": 8192, "temperature": 0.1},
                     "stream": False
                 }).encode('utf-8'),
                 headers={"Content-Type": "application/json"}
@@ -509,6 +547,60 @@ class NeoAgentCore:
 
         except Exception as e:
             return {"status": "error", "message": f"Screen & Folder Diagnostic Error: {str(e)}"}
+
+    async def generate_implementation_plan(self, query: str) -> AsyncGenerator[Dict[str, Any], None]:
+        """Generates a rich markdown Implementation Plan for big tasks before code generation starts."""
+        loop = asyncio.get_running_loop()
+
+        if not self.is_ollama_running():
+            yield {"type": "token", "content": "⚠️ Cannot generate plan: Ollama is offline.\n"}
+            return
+
+        from agent.prompts import IMPLEMENTATION_PLAN_SYSTEM_PROMPT
+        plan_prompt = (
+            f"Create a detailed Implementation Plan for this user request:\n\n"
+            f"{query}\n\n"
+            f"Follow the exact markdown format specified in your system prompt."
+        )
+
+        try:
+            req = urllib.request.Request(
+                f"{self.OLLAMA_BASE_URL}/api/chat",
+                data=json.dumps({
+                    "model": self.active_model,
+                    "messages": [
+                        {"role": "system", "content": IMPLEMENTATION_PLAN_SYSTEM_PROMPT},
+                        {"role": "user", "content": plan_prompt},
+                    ],
+                    "options": {"num_ctx": 8192, "num_predict": 4096, "temperature": 0.3},
+                    "stream": True,
+                }).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+            )
+
+            def fetch_plan_stream():
+                chunks = []
+                with urllib.request.urlopen(req, timeout=90.0) as response:
+                    for line in response:
+                        if line:
+                            try:
+                                obj = json.loads(line.decode('utf-8'))
+                                c = obj.get("message", {}).get("content", "")
+                                if c:
+                                    chunks.append(c)
+                                if obj.get("done", False):
+                                    break
+                            except Exception:
+                                pass
+                return chunks
+
+            plan_chunks = await loop.run_in_executor(None, fetch_plan_stream)
+            for token in plan_chunks:
+                yield {"type": "token", "content": token}
+                await asyncio.sleep(0.001)
+
+        except Exception as e:
+            yield {"type": "token", "content": f"\n⚠️ Plan generation error: {str(e)}\n"}
 
     def _build_coordinated_team(self, query: str) -> List[SubAgent]:
         """Create a dependency graph whose outputs form a shared project handoff.
@@ -902,7 +994,7 @@ class NeoAgentCore:
                             {"role": "system", "content": system_prompt},
                             {"role": "user", "content": delegation_prompt},
                         ],
-                        "options": {"num_ctx": 4096, "num_predict": 2048, "temperature": 0.15},
+                        "options": {"num_ctx": 8192, "num_predict": 4096, "temperature": 0.15},
                         "stream": False,
                     }).encode("utf-8"),
                     headers={"Content-Type": "application/json"},

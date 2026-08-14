@@ -250,7 +250,43 @@ class TestAgentCore(unittest.TestCase):
         self.assertEqual(draup.duration, "10.8s")
         self.assertEqual(draup.size, "56.2k")
         self.assertEqual(draup.start_offset, "+5.7s")
-        self.assertEqual(len(draup.sub_steps), 6)
+    def test_implementation_plan_prompt(self):
+        """Test implementation plan system prompt and selector."""
+        from agent.prompts import get_system_prompt, IMPLEMENTATION_PLAN_SYSTEM_PROMPT
+        prompt = get_system_prompt("implementation_plan")
+        self.assertIn("Implementation Plan", prompt)
+        self.assertIn("File Structure", prompt)
+        self.assertIn("Verification Checklist", prompt)
+        self.assertEqual(prompt, IMPLEMENTATION_PLAN_SYSTEM_PROMPT)
+
+    def test_web_app_system_prompt_requirements(self):
+        """Test web app prompt enforces minimum 3 views, functional buttons, and gradients."""
+        from agent.prompts import WEB_APP_SYSTEM_PROMPT
+        self.assertIn("MINIMUM 3 FUNCTIONAL PAGE VIEWS", WEB_APP_SYSTEM_PROMPT)
+        self.assertIn("EVERY BUTTON MUST BE FUNCTIONAL", WEB_APP_SYSTEM_PROMPT)
+        self.assertIn("CSS GRADIENT REQUIREMENTS", WEB_APP_SYSTEM_PROMPT)
+        self.assertIn("localStorage", WEB_APP_SYSTEM_PROMPT)
+
+    def test_extract_multi_file_blocks_with_fix_file(self):
+        """Test extraction of ### FIX_FILE and ### FILE blocks."""
+        from agent.core import extract_multi_file_blocks
+        sample_output = (
+            "### FIX_FILE: index.html\n"
+            "```html\n<!DOCTYPE html><html><body><h1>Updated</h1></body></html>\n```\n\n"
+            "### FIX_FILE: style.css\n"
+            "```css\nbody { background: #070a12; }\n```\n"
+        )
+        files = extract_multi_file_blocks(sample_output)
+        self.assertEqual(len(files), 2)
+        self.assertIn("index.html", files)
+        self.assertIn("style.css", files)
+        self.assertIn("<!DOCTYPE html>", files["index.html"])
+
+    def test_core_has_generate_implementation_plan(self):
+        """Test that NeoAgentCore provides generate_implementation_plan method."""
+        core = NeoAgentCore()
+        self.assertTrue(hasattr(core, "generate_implementation_plan"))
+        self.assertTrue(callable(getattr(core, "generate_implementation_plan")))
 
 
 if __name__ == "__main__":

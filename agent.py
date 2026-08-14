@@ -1,16 +1,8 @@
-:root {
-    /* Color Palette */
-    --purple-primary: #6366f1;
-    --text-bright: #0f172a;
-    --text-muted: #64748b;
-    --border-glass: rgba(226, 232, 240, 0.8);
-    --bg-terminal: #0f172a;
-    
-    /* Typography */
-    --font-sans: 'Inter', system-ui, sans-serif;
-    --font-heading: 'Inter', sans-serif;
-    --font-mono: 'Fira Code', 'Cascadia Code', monospace;
+"""Neo Agent Convenience Entry Point."""
+import sys
+from main import main
 
-    /* Backgrounds */
-    --bg-main: #f8fafc;
-}
+if __name__ == "__main__":
+    if len(sys.argv) == 1:
+        sys.argv.append("--desktop")
+    main()
