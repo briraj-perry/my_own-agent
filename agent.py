@@ -1,16 +1,9 @@
-:root {
-    /* Color Palette */
-    --purple-primary: #6366f1;
-    --text-bright: #0f172a;
-    --text-muted: #64748b;
-    --border-glass: rgba(226, 232, 240, 0.8);
-    --bg-terminal: #0f172a;
-    
-    /* Typography */
-    --font-sans: 'Inter', system-ui, sans-serif;
-    --font-heading: 'Inter', sans-serif;
-    --font-mono: 'Fira Code', 'Cascadia Code', monospace;
+"""Root-level agent compatibility shim.
 
-    /* Backgrounds */
-    --bg-main: #f8fafc;
-}
+This module provides backward-compatible imports for the agent package.
+All actual agent logic lives in the agent/ package directory.
+"""
+
+from agent import NeoAgentCore, ClawAgentEngine
+
+__all__ = ["NeoAgentCore", "ClawAgentEngine"]

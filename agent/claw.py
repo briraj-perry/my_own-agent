@@ -59,7 +59,7 @@ class ClawAgentEngine:
         self,
         user_query: str,
         target_folder: str = ".",
-        model_id: str = "gemma4:26b",
+        model_id: str = "gemma4:31b-cloud",
         indexer: Optional[Any] = None,
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """Generates a complete, multi-file Next.js application based on the user prompt."""

@@ -8,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from agent import NeoAgentCore
+from agent.orchestrator import MasterOrchestrator
+from agent.base_agent import AgentName
 from indexer import CodebaseIndexer
 from tools import file_tools
 
@@ -22,7 +24,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-agent_engine = NeoAgentCore()
+# Initialize the orchestrator (replaces direct NeoAgentCore usage)
+orchestrator = MasterOrchestrator()
+agent_engine = orchestrator  # Backward compatibility alias
 indexer = CodebaseIndexer()
 
 # Data Models
@@ -89,7 +93,7 @@ async def get_file_tree():
 async def get_file_content(path: str = Query(..., description="File path to open and read")):
     res = file_tools.read_file(path)
     if res.get("status") != "success":
-        raise HTTPException(status_code=44, detail=res.get("message"))
+        raise HTTPException(status_code=404, detail=res.get("message"))
     return res
 
 @app.get("/api/workspace/folders")
@@ -135,6 +139,78 @@ async def analyze_folder(req: FolderAnalyzeRequest):
 async def analyze_screen(req: FolderAnalyzeRequest):
     result = await agent_engine.analyze_and_autofix_screen_and_folder(req.folder)
     return result
+
+
+# --- New Multi-Agent Endpoints ---
+
+class DocumentAnalyzeRequest(BaseModel):
+    file_path: str
+    query: str = ""
+
+class PresentationRequest(BaseModel):
+    topic: str
+    num_slides: int = 10
+    format: str = "both"
+    target_folder: str = "."
+
+class ScreenDebugRequest(BaseModel):
+    code_context: str = ""
+
+
+@app.get("/api/agents")
+async def list_agents():
+    """List available agents and their capabilities."""
+    return {
+        "agents": [
+            {"name": "neo", "description": "Single-file web apps, Canvas games, and general coding help", "icon": "🤖"},
+            {"name": "claw", "description": "Full-stack Next.js/React applications", "icon": "⚡"},
+            {"name": "eagle", "description": "Code analysis, document parsing, bug fixing, and vision debugging", "icon": "🦅"},
+            {"name": "herald", "description": "School presentation slide decks (Reveal.js + PowerPoint)", "icon": "📊"},
+        ],
+        "orchestrator": "active",
+    }
+
+
+@app.post("/api/analyze-document")
+async def analyze_document(req: DocumentAnalyzeRequest):
+    """Upload a document path for Eagle analysis."""
+    from agent.base_agent import AgentTask
+    task = AgentTask(
+        prompt=req.query or f"Analyze and summarize this document: {req.file_path}",
+        files=[req.file_path],
+        context={"task_type": "document_analysis"},
+    )
+    eagle = orchestrator._get_agent(AgentName.EAGLE)
+    response = await eagle.execute(task)
+    return response.to_dict()
+
+
+@app.post("/api/generate-presentation")
+async def generate_presentation(req: PresentationRequest):
+    """Generate a presentation via Herald agent."""
+    from agent.base_agent import AgentTask
+    task = AgentTask(
+        prompt=f"Create a presentation about: {req.topic}",
+        target_folder=req.target_folder,
+        context={"task_type": "presentation", "num_slides": req.num_slides, "format": req.format},
+    )
+    herald = orchestrator._get_agent(AgentName.HERALD)
+    response = await herald.execute(task)
+    return response.to_dict()
+
+
+@app.post("/api/debug-screen")
+async def debug_screen(req: ScreenDebugRequest):
+    """Trigger vision debug via Eagle agent."""
+    from agent.base_agent import AgentTask
+    task = AgentTask(
+        prompt="Debug my screen - analyze the current desktop for errors",
+        context={"task_type": "vision_debug", "code_context": req.code_context},
+    )
+    eagle = orchestrator._get_agent(AgentName.EAGLE)
+    response = await eagle.execute(task)
+    return response.to_dict()
+
 
 # WebSocket Chat Endpoint
 @app.websocket("/ws")

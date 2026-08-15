@@ -11,7 +11,7 @@ from rich.live import Live
 from rich.align import Align
 from rich.text import Text
 
-from agent import NeoAgentCore
+from agent.orchestrator import MasterOrchestrator
 from indexer import CodebaseIndexer
 
 console = Console()
@@ -28,7 +28,7 @@ MASCOT_ASCII = """
 
 class NeoCLI:
     def __init__(self):
-        self.agent = NeoAgentCore()
+        self.agent = MasterOrchestrator()
         self.indexer = CodebaseIndexer(root_dir=os.path.dirname(__file__))
 
     def print_banner(self):
@@ -115,6 +115,15 @@ class NeoCLI:
                 full_text += token
                 sys.stdout.write(token)
                 sys.stdout.flush()
+
+            elif evt_type == "routing":
+                target = event.get("target_agent", "neo").upper()
+                reason = event.get("reasoning", "")
+                console.print(f"[bold cyan]🎯 Routed to [{target} AGENT]: {reason}[/bold cyan]")
+
+            elif evt_type == "artifact":
+                art = event.get("artifact", {})
+                console.print(f"\n[bold green]📦 Artifact: {art.get('title')} ({art.get('file_path')})[/bold green]")
 
             elif evt_type == "permission_request":
                 console.print("\n")

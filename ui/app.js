@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Sub-Agent tracking dictionary
     const subAgentsMap = {};
     let inspectingSubAgentId = null;
+    let selectedAgentMode = 'auto'; // 'auto' | 'neo' | 'claw' | 'eagle' | 'herald'
 
     // Configure marked options
     if (window.marked) {
@@ -326,9 +327,128 @@ document.addEventListener('DOMContentLoaded', () => {
             appendTerminalLog(`[SUB-AGENT COMPLETED] ${sa.name} written: ${sa.target_file}`);
             fetchFiles();
 
+        } else if (type === 'routing') {
+            const targetAgent = (evt.target_agent || 'neo').toLowerCase();
+            const reasoning = evt.reasoning || 'Task assigned.';
+            const agentIcons = {
+                neo: { icon: 'fa-robot', name: 'NEO AGENT', class: 'neo', desc: 'Web Apps & Games Specialist' },
+                claw: { icon: 'fa-bolt', name: 'CLAW AGENT', class: 'claw', desc: 'Next.js / React Architect' },
+                eagle: { icon: 'fa-feather-pointed', name: 'EAGLE AGENT', class: 'eagle', desc: 'Code Review & Vision Debugger' },
+                herald: { icon: 'fa-chart-pie', name: 'HERALD AGENT', class: 'herald', desc: 'Presentation & Slides Specialist' }
+            };
+            const ag = agentIcons[targetAgent] || agentIcons.neo;
+
+            const routingCard = document.createElement('div');
+            routingCard.className = 'routing-decision-card';
+            routingCard.innerHTML = `
+                <div class="routing-avatar ${ag.class}">
+                    <i class="fa-solid ${ag.icon}"></i>
+                </div>
+                <div class="routing-info">
+                    <h4>🎯 Routed to ${ag.name}</h4>
+                    <p>${escapeHtml(reasoning)} <span style="color:var(--text-muted); font-size:0.75rem;">• ${ag.desc}</span></p>
+                </div>
+            `;
+            chatMessages.appendChild(routingCard);
+            scrollToBottom();
+            appendTerminalLog(`[ORCHESTRATOR] Routed request to ${ag.name}: ${reasoning}`);
+
+        } else if (type === 'artifact') {
+            const art = evt.artifact || {};
+            renderArtifactCard(art);
+
         } else if (type === 'execution_log') {
             appendTerminalLog(`\n> [EXEC] ${evt.command || ''}\n${evt.output || ''}`);
         }
+    }
+
+    // Render Rich Artifact Cards (Presentations, Debug Cards, Code Files)
+    function renderArtifactCard(art) {
+        const artDiv = document.createElement('div');
+        const artType = art.artifact_type || 'file';
+
+        if (artType === 'debug_card') {
+            const meta = art.metadata || {};
+            const severity = (meta.severity || '🟡 Moderate').toLowerCase();
+            const sevClass = severity.includes('minor') ? 'minor' : (severity.includes('critical') ? 'critical' : 'moderate');
+
+            artDiv.className = `debug-card-box ${sevClass}`;
+            artDiv.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="font-weight: 700; font-size: 1rem; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-bug" style="color: #f72585;"></i> ${escapeHtml(art.title || 'Debug Report')}
+                    </div>
+                    <span class="debug-severity-badge ${sevClass}">${escapeHtml(meta.severity || 'MODERATE')}</span>
+                </div>
+                <div style="font-size: 0.88rem; margin-bottom: 6px; color: #cbd5e1;">
+                    <strong>What happened:</strong> ${escapeHtml(meta.what_happened || '')}
+                </div>
+                <div style="font-size: 0.85rem; margin-bottom: 10px; color: #94a3b8;">
+                    <strong>Why it happened:</strong> ${escapeHtml(meta.why_it_happened || '')}
+                </div>
+                ${meta.code_before || meta.code_after ? `
+                <div class="code-diff-container">
+                    <div class="diff-col before">
+                        <h5><i class="fa-solid fa-xmark"></i> Buggy Code</h5>
+                        <pre><code>${escapeHtml(meta.code_before || '')}</code></pre>
+                    </div>
+                    <div class="diff-col after">
+                        <h5><i class="fa-solid fa-check"></i> Corrected Code</h5>
+                        <pre><code>${escapeHtml(meta.code_after || '')}</code></pre>
+                    </div>
+                </div>` : ''}
+                ${meta.pro_tip ? `
+                <div class="pro-tip-box">
+                    <strong>💡 Pro Tip for Students:</strong> ${escapeHtml(meta.pro_tip)}
+                </div>` : ''}
+            `;
+        } else if (artType === 'slide_deck' || art.title.toLowerCase().includes('presentation')) {
+            artDiv.className = 'artifact-card';
+            artDiv.innerHTML = `
+                <div class="artifact-card-header">
+                    <div class="artifact-card-title">
+                        <i class="fa-solid fa-file-powerpoint" style="color: #4cc9f0;"></i>
+                        <span>${escapeHtml(art.title || 'School Presentation')}</span>
+                    </div>
+                    <div class="artifact-card-actions">
+                        ${art.file_path && art.file_path.endsWith('.html') ? `
+                        <button class="cyber-button primary preview-deck-btn" style="padding: 4px 12px; font-size: 0.8rem;">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Slide Deck
+                        </button>` : ''}
+                    </div>
+                </div>
+                <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px;">
+                    Saved presentation files: <code>${escapeHtml(art.file_path || 'Workspace')}</code>
+                </div>
+                <div style="font-size: 0.82rem; color: #cbd5e1; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px;">
+                    ${escapeHtml(art.content || 'Presentation created successfully with Reveal.js HTML and PowerPoint .pptx formats!')}
+                </div>
+            `;
+            const previewBtn = artDiv.querySelector('.preview-deck-btn');
+            if (previewBtn && art.file_path) {
+                previewBtn.addEventListener('click', () => {
+                    openFileViewer(art.file_path);
+                });
+            }
+        } else {
+            artDiv.className = 'artifact-card';
+            artDiv.innerHTML = `
+                <div class="artifact-card-header">
+                    <div class="artifact-card-title">
+                        <i class="fa-solid fa-file-code" style="color: #00f5d4;"></i>
+                        <span>${escapeHtml(art.title || 'Generated Artifact')}</span>
+                    </div>
+                    <span style="font-size: 0.75rem; color: #94a3b8;">${escapeHtml(art.file_path || '')}</span>
+                </div>
+                <div style="font-size: 0.85rem; color: #cbd5e1; white-space: pre-wrap; max-height: 200px; overflow-y: auto;">
+                    ${escapeHtml(art.content || '')}
+                </div>
+            `;
+        }
+
+        chatMessages.appendChild(artDiv);
+        scrollToBottom();
+        appendTerminalLog(`[ARTIFACT] Produced ${art.artifact_type || 'output'}: ${art.title || ''}`);
     }
 
     // Render Sub-Agents List in Right Panel (Requirements 1 & 2)
@@ -704,15 +824,71 @@ document.addEventListener('DOMContentLoaded', () => {
         return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
+    // Agent Mode Pill Selector
+    const agentPills = document.querySelectorAll('.agent-pill');
+    agentPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            agentPills.forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            selectedAgentMode = pill.getAttribute('data-agent') || 'auto';
+            const agentNames = {
+                auto: 'Auto (Master Orchestrator)',
+                neo: 'Neo (Web Apps & Games)',
+                claw: 'Claw (Next.js & React)',
+                eagle: 'Eagle (Code Review & Vision)',
+                herald: 'Herald (Presentations)'
+            };
+            appendTerminalLog(`[AGENT SELECTOR] Switched mode to: ${agentNames[selectedAgentMode]}`);
+        });
+    });
+
+    // Quick Prompts Chips
+    const quickPromptTags = document.querySelectorAll('.quick-prompt-tag');
+    quickPromptTags.forEach(tag => {
+        tag.addEventListener('click', () => {
+            const promptText = tag.getAttribute('data-prompt');
+            if (promptText && userInput) {
+                userInput.value = promptText;
+                userInput.focus();
+                // If the user clicks, auto submit for instant feedback
+                chatForm.dispatchEvent(new Event('submit'));
+            }
+        });
+    });
+
+    // Clear Chat Button
+    if (clearChatBtn) {
+        clearChatBtn.addEventListener('click', () => {
+            chatMessages.innerHTML = `
+                <div class="message system-message">
+                    <div class="msg-avatar system-avatar">
+                        <i class="fa-solid fa-microchip"></i>
+                    </div>
+                    <div class="msg-bubble">
+                        <div class="msg-author">NEO Companion Studio v2.0</div>
+                        <div class="msg-content">Chat history cleared. System ready for your next prompt!</div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
     // Submit Prompt Form
     chatForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const query = userInput.value.trim();
+        let query = userInput.value.trim();
         if (!query && attachedImages.length === 0) return;
+
+        // If specific agent is selected (and not auto), prepend agent directive for orchestrator
+        if (selectedAgentMode && selectedAgentMode !== 'auto') {
+            if (!query.toLowerCase().startsWith(`@${selectedAgentMode}`) && !query.toLowerCase().startsWith(`[${selectedAgentMode}]`)) {
+                query = `[AGENT:${selectedAgentMode.toUpperCase()}] ${query}`;
+            }
+        }
 
         if (ws && ws.readyState === WebSocket.OPEN) {
             const currentImages = [...attachedImages];
-            appendUserMessage(query || "Inspect attached image(s)", currentImages);
+            appendUserMessage(userInput.value.trim() || "Inspect attached image(s)", currentImages);
             currentAssistantBubble = null;
             
             const payload = {
@@ -729,7 +905,7 @@ document.addEventListener('DOMContentLoaded', () => {
             userInput.value = '';
             attachedImages = [];
             renderImagePreviews();
-            appendTerminalLog(`\n[USER PROMPT] ${query} ${currentImages.length ? `(${currentImages.length} images attached)` : ''}`);
+            appendTerminalLog(`\n[USER PROMPT] ${query} ${currentImages.length ? `(${currentImages.length} attachments)` : ''}`);
         } else {
             alert('WebSocket is not connected to my_neo-agent server.');
         }
@@ -933,9 +1109,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ folder: data.full_path || filePath })
                 });
-                if (currentWorkingFolderBadge) {
+                if (currentFolderLabel) {
                     const shortName = fileName || filePath.split('/').pop().split('\\').pop();
-                    currentWorkingFolderBadge.innerHTML = `<i class="fa-solid fa-folder-open"></i> ${shortName}`;
+                    currentFolderLabel.innerHTML = `${shortName}`;
                 }
                 fetchFiles();
             } else {

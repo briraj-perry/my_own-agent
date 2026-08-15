@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -21,10 +21,10 @@ class Settings(BaseSettings):
         default_factory=lambda: os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
     )
     primary_model: str = Field(
-        default_factory=lambda: os.getenv("PRIMARY_MODEL", "qwen2.5-coder:14b")
+        default_factory=lambda: os.getenv("PRIMARY_MODEL", "gemma4:31b-cloud")
     )
     fallback_models: List[str] = Field(
-        default_factory=lambda: ["qwen2.5-coder:7b", "gemma2"]
+        default_factory=lambda: ["qwen2.5-coder:7b", "gemma4"]
     )
     temperature: float = Field(default=0.2)
     timeout_seconds: float = Field(default=60.0)
@@ -59,6 +59,20 @@ class Settings(BaseSettings):
         ).resolve()
     )
 
+    # Agent-Specific Model Overrides
+    agent_models: Dict[str, str] = Field(
+        default_factory=lambda: {
+            "orchestrator": os.getenv("PRIMARY_MODEL", "gemma4:31b-cloud"),
+            "neo": os.getenv("PRIMARY_MODEL", "gemma4:31b-cloud"),
+            "claw": os.getenv("PRIMARY_MODEL", "gemma4:31b-cloud"),
+            "eagle": os.getenv("PRIMARY_MODEL", "gemma4:31b-cloud"),
+            "herald": os.getenv("PRIMARY_MODEL", "gemma4:31b-cloud"),
+        }
+    )
+    vision_model: str = Field(
+        default_factory=lambda: os.getenv("VISION_MODEL", "gemma4:12b")
+    )
+
     # Self-Correction & Agent Control Settings
     max_retries: int = Field(default=3)
     require_permission_tools: List[str] = Field(
@@ -71,12 +85,26 @@ class Settings(BaseSettings):
         ]
     )
 
+    # New output directories for Eagle and Herald agents
+    presentations_dir: Path = Field(
+        default_factory=lambda: Path(
+            os.getenv("PRESENTATIONS_DIR", r"d:\learning\school_projects\my_neo-agent\data\presentations")
+        ).resolve()
+    )
+    analysis_output_dir: Path = Field(
+        default_factory=lambda: Path(
+            os.getenv("ANALYSIS_OUTPUT_DIR", r"d:\learning\school_projects\my_neo-agent\data\analysis_output")
+        ).resolve()
+    )
+
     def ensure_directories(self) -> None:
         """Ensure all required workspace and data directories exist."""
         self.workspace_path.mkdir(parents=True, exist_ok=True)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.checkpoint_db_path.parent.mkdir(parents=True, exist_ok=True)
         self.chat_history_db_path.parent.mkdir(parents=True, exist_ok=True)
+        self.presentations_dir.mkdir(parents=True, exist_ok=True)
+        self.analysis_output_dir.mkdir(parents=True, exist_ok=True)
 
     @property
     def model_chain(self) -> List[str]:

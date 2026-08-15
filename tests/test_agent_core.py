@@ -28,7 +28,7 @@ class TestAgentCore(unittest.TestCase):
     def test_config_settings(self):
         """Test configuration defaults and directory creation."""
         self.assertEqual(settings.ollama_base_url, "http://localhost:11434")
-        self.assertEqual(settings.primary_model, "qwen2.5-coder:14b")
+        self.assertEqual(settings.primary_model, "gemma4:31b-cloud")
         self.assertIn("qwen2.5-coder:7b", settings.fallback_models)
         self.assertTrue(settings.data_dir.exists())
 

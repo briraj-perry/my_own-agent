@@ -45,7 +45,8 @@
                 <div class="control-group">
                     <label for="model-select"><i class="fa-solid fa-microchip"></i> Active Model:</label>
                     <select id="model-select" class="cyber-select">
-                        <option value="gemma4:26b" selected>Gemma 4 26B (High Intelligence)</option>
+                        <option value="gemma4:31b-cloud" selected>Gemma 4 31B Cloud (High Intelligence)</option>
+                        <option value="gemma4:26b">Gemma 4 26B</option>
                         <option value="qwen2.5-coder:14b">Qwen 2.5 Coder 14B</option>
                         <option value="gemma4:12b">Gemma 4 12B (Vision & Screen)</option>
                         <option value="llama3.2:latest">Llama 3.2 (Fast)</option>
@@ -112,13 +113,40 @@
             <section class="chat-panel glass-panel">
                 <div class="chat-header">
                     <div class="chat-title">
-                        <i class="fa-solid fa-comments"></i> Stream Conversation
+                        <i class="fa-solid fa-comments"></i> Multi-Agent Conversation
+                    </div>
+                    <!-- Specialized Agent Selector Bar -->
+                    <div class="agent-mode-selector" id="agent-mode-selector">
+                        <button class="agent-pill active" data-agent="auto" title="Master Orchestrator auto-routes based on prompt">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Auto
+                        </button>
+                        <button class="agent-pill" data-agent="neo" title="Neo: Single-file Web Apps & Canvas Games">
+                            <i class="fa-solid fa-robot"></i> Neo
+                        </button>
+                        <button class="agent-pill" data-agent="claw" title="Claw: Next.js & React Full-Stack Apps">
+                            <i class="fa-solid fa-bolt"></i> Claw
+                        </button>
+                        <button class="agent-pill" data-agent="eagle" title="Eagle: Code Analysis, Debug Cards & Docs">
+                            <i class="fa-solid fa-feather-pointed"></i> Eagle
+                        </button>
+                        <button class="agent-pill" data-agent="herald" title="Herald: School Presentations & Slide Decks">
+                            <i class="fa-solid fa-chart-pie"></i> Herald
+                        </button>
                     </div>
                     <div class="chat-actions">
                         <button id="clear-chat-btn" class="icon-btn" title="Clear Chat Window">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </div>
+                </div>
+
+                <!-- Quick Prompt Suggestions for Students -->
+                <div class="quick-prompts-bar" id="quick-prompts-bar">
+                    <span class="quick-prompt-tag" data-prompt="Build a colorful retro Snake arcade game with score tracking and sound effects in a single HTML file"><i class="fa-solid fa-gamepad"></i> 🐍 Snake Game</span>
+                    <span class="quick-prompt-tag" data-prompt="Create a modern Next.js developer portfolio with animated hero, dark mode glassmorphism cards, and project showcase"><i class="fa-solid fa-bolt"></i> ⚡ Next.js Portfolio</span>
+                    <span class="quick-prompt-tag" data-prompt="Analyze the code in my workspace, explain what it does, and generate an educational DebugCard for any errors found"><i class="fa-solid fa-feather-pointed"></i> 🦅 Review Code</span>
+                    <span class="quick-prompt-tag" data-prompt="Create a professional school presentation about 'Artificial Intelligence & Machine Learning' with 10 detailed slides and speaker notes"><i class="fa-solid fa-chart-pie"></i> 📊 AI Slide Deck</span>
+                    <span class="quick-prompt-tag" data-prompt="Look at my screen, identify any visual bugs, console errors or syntax mistakes, and explain how to fix them"><i class="fa-solid fa-camera"></i> 🔍 Screen Debug</span>
                 </div>
 
                 <!-- Scrollable Chat Stream Container -->
@@ -128,9 +156,30 @@
                             <i class="fa-solid fa-microchip"></i>
                         </div>
                         <div class="msg-bubble">
-                            <div class="msg-author">NEO Multi-Agent System Initialized</div>
+                            <div class="msg-author">NEO Companion Studio v2.0 • 4-Agent Orchestration Online</div>
                             <div class="msg-content">
-                                Welcome to <strong>my_neo-agent Sub-Agent Edition</strong>. Ask me to build complex applications, generate code lines, or write notes. I automatically spawn specialized sub-agents for large tasks!
+                                Welcome! I am your <strong>Agentic AI Coding Companion & School Assistant</strong> powered by 4 specialized sub-agents:
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
+                                    <div style="background: rgba(123, 44, 191, 0.12); padding: 8px 12px; border-radius: 8px; border-left: 3px solid #7b2cbf;">
+                                        <strong style="color: #c77dff;">🤖 Neo Agent</strong><br>
+                                        <span style="font-size: 0.82rem; color: #94a3b8;">Single-file Web Apps, Canvas Games & Rapid Code Prototyping</span>
+                                    </div>
+                                    <div style="background: rgba(0, 245, 212, 0.12); padding: 8px 12px; border-radius: 8px; border-left: 3px solid #00f5d4;">
+                                        <strong style="color: #00f5d4;">⚡ Claw Agent</strong><br>
+                                        <span style="font-size: 0.82rem; color: #94a3b8;">Full-Stack Next.js / React Multi-Component Applications</span>
+                                    </div>
+                                    <div style="background: rgba(247, 37, 133, 0.12); padding: 8px 12px; border-radius: 8px; border-left: 3px solid #f72585;">
+                                        <strong style="color: #f72585;">🦅 Eagle Agent</strong><br>
+                                        <span style="font-size: 0.82rem; color: #94a3b8;">Code Review, Bug Fixing, Document Analysis & Screen Vision</span>
+                                    </div>
+                                    <div style="background: rgba(76, 201, 240, 0.12); padding: 8px 12px; border-radius: 8px; border-left: 3px solid #4cc9f0;">
+                                        <strong style="color: #4cc9f0;">📊 Herald Agent</strong><br>
+                                        <span style="font-size: 0.82rem; color: #94a3b8;">School Presentations (Reveal.js HTML + PowerPoint .pptx)</span>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 10px; font-size: 0.85rem; color: #cbd5e1;">
+                                    💡 <em>Type any prompt or click a quick shortcut above — the Master Orchestrator will automatically route your request to the right agent!</em>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -142,11 +191,11 @@
                         <div class="textarea-wrapper">
                             <div id="image-preview-bar" class="image-preview-bar hidden"></div>
                             <div class="input-row">
-                                <button type="button" id="upload-image-btn" class="icon-btn image-upload-btn" title="Attach Image for AI Inspection">
+                                <button type="button" id="upload-image-btn" class="icon-btn image-upload-btn" title="Attach Image or Document (PNG, JPG, PDF, PPTX, Excel, Code)">
                                     <i class="fa-solid fa-paperclip"></i>
                                 </button>
-                                <input type="file" id="image-upload-input" accept="image/*" multiple style="display: none;">
-                                <textarea id="user-input" placeholder="Ask Neo to build an app or inspect attached images..." rows="1"></textarea>
+                                <input type="file" id="image-upload-input" accept="image/*,.pdf,.pptx,.xlsx,.csv,.py,.js,.html,.css,.json" multiple style="display: none;">
+                                <textarea id="user-input" placeholder="Ask Neo to build an app, review code, make slides, or inspect screen..." rows="1"></textarea>
                             </div>
                         </div>
                         <button type="submit" id="send-btn" class="cyber-button primary">

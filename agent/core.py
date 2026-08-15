@@ -181,7 +181,7 @@ class NeoAgentCore:
     VISION_MODEL = "gemma4:12b"
 
     def __init__(self):
-        self.active_model = "gemma4:26b"
+        self.active_model = "gemma4:31b-cloud"
         self.pending_permissions: Dict[str, asyncio.Future] = {}
         self.pending_folder_selections: Dict[str, asyncio.Future] = {}
         self.pending_framework_selections: Dict[str, asyncio.Future] = {}
@@ -209,7 +209,8 @@ class NeoAgentCore:
             pass
 
         return [
-            {"id": "gemma4:26b", "name": "Gemma 4 26B (High Intelligence)", "provider": "Ollama"},
+            {"id": "gemma4:31b-cloud", "name": "Gemma 4 31B Cloud (High Intelligence)", "provider": "Ollama"},
+            {"id": "gemma4:26b", "name": "Gemma 4 26B", "provider": "Ollama"},
             {"id": "qwen2.5-coder:14b", "name": "Qwen 2.5 Coder 14B", "provider": "Ollama"},
             {"id": "gemma4:12b", "name": "Gemma 4 12B (Vision & Screen)", "provider": "Ollama"},
             {"id": "qwen2.5-coder:7b", "name": "Qwen 2.5 Coder 7B", "provider": "Ollama"},
