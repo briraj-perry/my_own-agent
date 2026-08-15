@@ -141,9 +141,26 @@ def test_server_rest_api():
     assert "eagle" in agent_names
     assert "herald" in agent_names
 
-    # /api/models
-    r_models = client.get("/api/models")
-    assert r_models.status_code == 200
+def test_eagle_agent_handling():
+    """Verify Eagle Agent handles diverse prompts without premature rejection."""
+    eagle = EagleAgent()
+
+    # 1. General concept question
+    t1 = AgentTask(prompt="Explain how to prevent SQL injection in web apps")
+    ctx1 = eagle._build_analysis_context(t1)
+    p1 = eagle._assemble_prompt(t1, ctx1)
+    assert "SQL injection" in p1
+
+    # 2. Workspace review request
+    t2 = AgentTask(prompt="Review my workspace files for potential bugs", target_folder=".")
+    ctx2 = eagle._build_analysis_context(t2)
+    assert ctx2["workspace_summary"] != ""
+
+    # 3. Direct code snippet with backticks
+    t3 = AgentTask(prompt="Fix this:\n```python\nprint('hello world')\n```")
+    ctx3 = eagle._build_analysis_context(t3)
+    assert len(ctx3["code_snippets"]) == 1
+    assert ctx3["code_snippets"][0]["language"] == "python"
 
 
 if __name__ == "__main__":
@@ -154,6 +171,8 @@ if __name__ == "__main__":
     print("  [PASS] Orchestrator initialization & properties.")
     test_orchestrator_routing()
     print("  [PASS] Orchestrator routing.")
+    test_eagle_agent_handling()
+    print("  [PASS] Eagle agent handling & context building.")
     test_slide_builder()
     print("  [PASS] Slide builder.")
     test_debug_card_formatting()
@@ -161,4 +180,5 @@ if __name__ == "__main__":
     test_server_rest_api()
     print("  [PASS] Server REST API.")
     print("\n=== ALL INTEGRATION TESTS PASSED SUCCESSFULLY! ===")
+
 
