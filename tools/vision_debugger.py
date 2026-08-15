@@ -144,42 +144,75 @@ The JSON MUST have the following keys exactly:
             return self._create_error_card("No image data found in screen capture.")
              
         prompt = self._get_system_prompt("UI/visual")
-        prompt += "\n\nPlease analyze the provided screenshot to find the bug."
+        prompt += "\n\nPlease analyze the provided screenshot to find the bug or describe the UI."
         if code_context:
             prompt += f"\n\nHere is the relevant code context:\n```\n{code_context}\n```"
             
-        llm_response = await self._call_ollama(prompt, model=self.vision_model, images=[b64_image])
+        models_to_try = [self.vision_model, self.text_model, "gemma4:12b", "gemma4:31b-cloud"]
+        seen = set()
+        llm_response = ""
+        for mod in models_to_try:
+            if mod in seen:
+                continue
+            seen.add(mod)
+            llm_response = await self._call_ollama(prompt, model=mod, images=[b64_image])
+            if not llm_response.startswith("Error connecting to Ollama"):
+                break
         
         if llm_response.startswith("Error connecting to Ollama"):
             return self._create_error_card(llm_response)
             
         return self._parse_debug_card_from_llm(llm_response, fallback_code=code_context)
     
-    async def analyze_image(self, image_path: str, code_context: str = "") -> DebugCard:
-        """Analyze a provided screenshot/image (not live capture)."""
+    async def analyze_image(self, image_input: str, code_context: str = "") -> DebugCard:
+        """Analyze a provided screenshot/image (supports file paths, data URIs, and raw base64 strings)."""
         import base64
         import os
         
-        if not os.path.exists(image_path):
-            return self._create_error_card(f"Image not found at path: {image_path}")
+        b64_image = None
+        
+        # 1. Check if image_input is a valid file path on disk
+        if isinstance(image_input, str) and len(image_input) < 1024 and os.path.exists(image_input) and os.path.isfile(image_input):
+            try:
+                with open(image_input, "rb") as f:
+                    b64_image = base64.b64encode(f.read()).decode('utf-8')
+            except Exception as e:
+                return self._create_error_card(f"Could not read image file: {str(e)}")
+        
+        # 2. Check if image_input is a base64 string or data URL
+        elif isinstance(image_input, str) and image_input.strip():
+            clean_str = image_input.strip()
+            # Strip data URI scheme prefix (e.g. data:image/png;base64,...)
+            if clean_str.startswith("data:image"):
+                comma_idx = clean_str.find(",")
+                if comma_idx != -1:
+                    clean_str = clean_str[comma_idx + 1:].strip()
+            b64_image = clean_str
             
-        try:
-            with open(image_path, "rb") as f:
-                b64_image = base64.b64encode(f.read()).decode('utf-8')
-        except Exception as e:
-            return self._create_error_card(f"Could not read image: {str(e)}")
+        if not b64_image:
+            return self._create_error_card("No valid image data was provided for analysis.")
             
         prompt = self._get_system_prompt("UI/visual")
-        prompt += "\n\nPlease analyze the provided screenshot to find the bug."
+        prompt += "\n\nPlease analyze the provided image to find any bugs, explain what is shown, and provide recommendations."
         if code_context:
             prompt += f"\n\nHere is the relevant code context:\n```\n{code_context}\n```"
             
-        llm_response = await self._call_ollama(prompt, model=self.vision_model, images=[b64_image])
+        models_to_try = [self.vision_model, self.text_model, "gemma4:12b", "gemma4:31b-cloud"]
+        seen = set()
+        llm_response = ""
+        for mod in models_to_try:
+            if mod in seen:
+                continue
+            seen.add(mod)
+            llm_response = await self._call_ollama(prompt, model=mod, images=[b64_image])
+            if not llm_response.startswith("Error connecting to Ollama"):
+                break
         
         if llm_response.startswith("Error connecting to Ollama"):
             return self._create_error_card(llm_response)
             
         return self._parse_debug_card_from_llm(llm_response, fallback_code=code_context)
+
     
     async def analyze_code_for_bugs(self, code: str, error_message: str = "", language: str = "python") -> DebugCard:
         """Analyze code text (no screenshot) and generate a DebugCard.

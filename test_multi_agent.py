@@ -121,7 +121,44 @@ def test_debug_card_formatting():
     assert "Pro Tip" in md
 
 
+def test_vision_debugger_image_types():
+    """Verify VisionDebugger processes base64 strings, data URIs, and disk files without throwing path errors."""
+    debugger = VisionDebugger()
+    
+    # Mock Ollama call to prevent network delays in unit tests
+    async def mock_call_ollama(prompt, model=None, images=None):
+        return json.dumps({
+            "bug_title": "Visual Alignment Error",
+            "severity": "🟡 Moderate",
+            "what_happened": "The button is misaligned on the canvas.",
+            "why_it_happened": "Missing CSS display flex rule.",
+            "code_before": "div { margin: 0; }",
+            "code_after": "div { display: flex; }",
+            "pro_tip": "Always use flex containers for responsive alignment.",
+            "related_concepts": ["CSS Flexbox"],
+            "language": "css"
+        })
+    debugger._call_ollama = mock_call_ollama
+
+    async def run_checks():
+        raw_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        data_uri = f"data:image/png;base64,{raw_b64}"
+
+        # 1. Raw Base64 string
+        card1 = await debugger.analyze_image(raw_b64, code_context="div { margin: 0; }")
+        assert "not found at path" not in card1.what_happened
+        assert card1.bug_title == "Visual Alignment Error"
+
+        # 2. Data URI scheme
+        card2 = await debugger.analyze_image(data_uri, code_context="div { margin: 0; }")
+        assert "not found at path" not in card2.what_happened
+        assert card2.bug_title == "Visual Alignment Error"
+
+    asyncio.run(run_checks())
+
+
 def test_server_rest_api():
+
     """Verify FastAPI endpoints."""
     client = TestClient(app)
 
@@ -177,8 +214,11 @@ if __name__ == "__main__":
     print("  [PASS] Slide builder.")
     test_debug_card_formatting()
     print("  [PASS] DebugCard formatting.")
+    test_vision_debugger_image_types()
+    print("  [PASS] Vision debugger base64 & data URI handling.")
     test_server_rest_api()
     print("  [PASS] Server REST API.")
     print("\n=== ALL INTEGRATION TESTS PASSED SUCCESSFULLY! ===")
+
 
 
