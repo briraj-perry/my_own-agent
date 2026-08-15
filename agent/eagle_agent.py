@@ -9,9 +9,11 @@ from agent.prompts import EAGLE_SYSTEM_PROMPT
 from tools.document_tools import detect_document_type, extract_document_summary, read_code_file
 from tools.vision_debugger import VisionDebugger, DebugCard
 from tools import file_tools
+from agent.core import extract_multi_file_blocks, extract_file_patches, extract_code_block, extract_filename_from_prompt
+from indexer import CodebaseIndexer
 
 class EagleAgent(BaseAgent):
-    """Eagle Agent: Specializes in code review, bug analysis, document extraction, and screen vision debugging."""
+    """Eagle Agent: Specializes in code review, bug analysis, auto-fixing errors to disk, document extraction, and screen vision debugging."""
 
     name = AgentName.EAGLE
     description = "Code analysis, document parsing, bug fixing, and vision debugging"
@@ -20,6 +22,7 @@ class EagleAgent(BaseAgent):
         super().__init__()
         self.system_prompt = EAGLE_SYSTEM_PROMPT
         self.vision_debugger = VisionDebugger()
+        self.indexer = CodebaseIndexer()
 
     def _build_analysis_context(self, task: AgentTask) -> Dict[str, Any]:
         """Gathers all available code, document, and workspace context for the Eagle LLM."""
@@ -27,7 +30,8 @@ class EagleAgent(BaseAgent):
             "code_snippets": [],
             "documents": [],
             "workspace_summary": "",
-            "language": "python"
+            "language": "python",
+            "primary_file": None
         }
 
         # 1. Check explicit files attached
@@ -43,6 +47,8 @@ class EagleAgent(BaseAgent):
                             "content": res.get("content", "")
                         })
                         context_data["language"] = res.get("language", "python")
+                        if not context_data["primary_file"]:
+                            context_data["primary_file"] = file_path
                 elif ftype in ["pdf", "pptx", "xlsx", "csv"]:
                     doc_res = extract_document_summary(file_path)
                     if doc_res.get("status") == "success":
@@ -52,11 +58,26 @@ class EagleAgent(BaseAgent):
                             "summary": doc_res.get("summary_text", "")
                         })
 
-        # 2. Check if workspace review is requested or target_folder is set
-        prompt_lower = task.prompt.lower()
-        needs_workspace_scan = any(kw in prompt_lower for kw in ["workspace", "project", "folder", "all files", "check my code", "review code", "find bugs", "review"])
-        
+        # 2. Check if prompt mentions a specific filename in workspace
+        prompt_fn = extract_filename_from_prompt(task.prompt)
         target_dir = task.target_folder or file_tools.get_workspace_root()
+        if prompt_fn and not context_data["code_snippets"]:
+            full_fn = os.path.join(target_dir, prompt_fn)
+            if os.path.exists(full_fn):
+                res = read_code_file(full_fn)
+                if res.get("status") == "success":
+                    context_data["code_snippets"].append({
+                        "path": prompt_fn,
+                        "language": res.get("language", "python"),
+                        "content": res.get("content", "")
+                    })
+                    context_data["language"] = res.get("language", "python")
+                    context_data["primary_file"] = prompt_fn
+
+        # 3. Check if workspace review is requested or target_folder is set
+        prompt_lower = task.prompt.lower()
+        needs_workspace_scan = any(kw in prompt_lower for kw in ["workspace", "project", "folder", "all files", "check my code", "review code", "find bugs", "fix error", "debug"])
+        
         if needs_workspace_scan and os.path.exists(target_dir):
             try:
                 tree = file_tools.list_directory(target_dir)
@@ -64,24 +85,24 @@ class EagleAgent(BaseAgent):
                 code_files = [it["name"] for it in items if it.get("type") == "file" and any(it["name"].endswith(ext) for ext in [".py", ".js", ".ts", ".jsx", ".tsx", ".html", ".css", ".json", ".md"])]
                 
                 ws_snippets = []
-                # Read up to 8 primary source files
                 for cf in code_files[:8]:
                     full_p = os.path.join(target_dir, cf)
                     f_res = file_tools.read_file(full_p)
                     if f_res.get("status") == "success":
                         content = f_res.get("content", "")
-                        # Limit large files to 150 lines
                         lines = content.splitlines()
                         if len(lines) > 150:
                             content = "\n".join(lines[:150]) + f"\n... [{len(lines)-150} lines truncated]"
                         ws_snippets.append(f"--- File: {cf} ---\n{content}\n")
+                        if not context_data["primary_file"]:
+                            context_data["primary_file"] = cf
                 
                 if ws_snippets:
                     context_data["workspace_summary"] = f"Workspace Root: {target_dir}\nFiles:\n" + "\n".join(ws_snippets)
             except Exception:
                 pass
 
-        # 3. Check for inline markdown code blocks in prompt
+        # 4. Check for inline markdown code blocks in prompt
         if "```" in task.prompt:
             parts = task.prompt.split("```")
             for i in range(1, len(parts), 2):
@@ -108,8 +129,6 @@ class EagleAgent(BaseAgent):
 
         return context_data
 
-
-
     def _assemble_prompt(self, task: AgentTask, context_data: Dict[str, Any]) -> str:
         """Constructs the prompt for Eagle analysis."""
         prompt_parts = []
@@ -131,11 +150,55 @@ class EagleAgent(BaseAgent):
             prompt_parts.append(context_data["workspace_summary"])
 
         prompt_parts.append(
-            "\nProvide a clear, student-friendly explanation, highlight any errors, why they occur, and provide corrected code examples. "
-            "If a specific bug is present, explain it step-by-step with clear before/after fixes and pro-tips."
+            "\nProvide a clear, student-friendly explanation, highlight any errors, why they occur, and provide the complete corrected code. "
+            "CRITICAL: If you are fixing a file or providing a solution, always provide the 100% complete corrected file using: `### FILE: <filename>` followed by the code block so it can be saved to disk!"
         )
 
         return "\n".join(prompt_parts)
+
+    def _apply_autofixes_to_disk(self, text: str, target_folder: str, primary_file: Optional[str] = None) -> List[AgentArtifact]:
+        """Extracts corrected code blocks from Eagle's response and writes them directly to disk."""
+        written_artifacts = []
+        target_dir = target_folder or file_tools.get_workspace_root()
+
+        # 1. Multi-file blocks: ### FILE: filename
+        file_blocks = extract_multi_file_blocks(text)
+        
+        # 2. If no multi-file blocks, but there is a clear single code block and a known target file being fixed
+        if not file_blocks and primary_file and ("```" in text or "fix" in text.lower()):
+            code = extract_code_block(text)
+            if code and len(code.strip().splitlines()) >= 2:
+                # Check if it looks like actual code
+                file_blocks[os.path.basename(primary_file)] = code
+
+        for filename, code_content in file_blocks.items():
+            if not code_content.strip():
+                continue
+            
+            # Syntax validation if python
+            if filename.endswith(".py"):
+                try:
+                    ast.parse(code_content)
+                except SyntaxError:
+                    pass  # Write anyway or let user inspect
+
+            res = file_tools.write_file(filename, code_content, folder=target_dir)
+            if res.get("status") == "success":
+                written_artifacts.append(AgentArtifact(
+                    artifact_type="file",
+                    title=filename,
+                    content=code_content,
+                    file_path=res.get("full_path") or res.get("path") or filename,
+                    metadata={"lines": res.get("lines", 0), "bytes": res.get("bytes", 0)}
+                ))
+
+        if written_artifacts:
+            try:
+                self.indexer.reindex()
+            except Exception:
+                pass
+
+        return written_artifacts
 
     async def execute(self, task: AgentTask) -> AgentResponse:
         """Non-streaming execution."""
@@ -153,8 +216,8 @@ class EagleAgent(BaseAgent):
 
         response_text = await self._call_ollama_complete(messages)
 
-        # Parse potential DebugCard
         artifacts = []
+        # Parse potential DebugCard
         try:
             card = self.vision_debugger._parse_debug_card_from_llm(
                 response_text,
@@ -171,6 +234,14 @@ class EagleAgent(BaseAgent):
         except Exception:
             pass
 
+        # Apply autofixes to disk
+        written_files = self._apply_autofixes_to_disk(
+            response_text,
+            task.target_folder,
+            primary_file=context_data.get("primary_file")
+        )
+        artifacts.extend(written_files)
+
         return AgentResponse(
             agent_name=self.name,
             content=response_text,
@@ -178,7 +249,7 @@ class EagleAgent(BaseAgent):
         )
 
     async def stream_execute(self, task: AgentTask) -> AsyncGenerator[Dict[str, Any], None]:
-        """Streaming execution yielding tokens and structured artifacts live."""
+        """Streaming execution yielding tokens, live code fixes to disk, and structured artifacts."""
         yield {"type": "state", "mascot_state": "analyzing"}
 
         is_vision = bool(task.images) or "debug screen" in task.prompt.lower()
@@ -209,7 +280,7 @@ class EagleAgent(BaseAgent):
             full_response = err_msg
             yield {"type": "token", "content": err_msg}
 
-        # Check if response contains a structured DebugCard to render in UI
+        # 1. Check if response contains a structured DebugCard to render in UI
         try:
             card = self.vision_debugger._parse_debug_card_from_llm(
                 full_response,
@@ -225,6 +296,29 @@ class EagleAgent(BaseAgent):
                 yield {"type": "artifact", "artifact": artifact.to_dict()}
         except Exception:
             pass
+
+        # 2. AUTO-FIX DISK APPLICATION: Write corrected files directly to disk!
+        written_files = self._apply_autofixes_to_disk(
+            full_response,
+            task.target_folder,
+            primary_file=context_data.get("primary_file")
+        )
+
+        for art in written_files:
+            yield {
+                "type": "execution_log",
+                "mascot_state": "executing",
+                "command": f"eagle_autofix('{art.title}')",
+                "output": f"✓ Corrected code written to disk ({art.metadata.get('lines', 0)} lines)"
+            }
+            yield {
+                "type": "token",
+                "content": f"\n\n💾 **[EAGLE AUTO-FIX APPLIED]**: Successfully patched `{art.title}` on disk!\n"
+            }
+            yield {
+                "type": "artifact",
+                "artifact": art.to_dict()
+            }
 
         yield {"type": "state", "mascot_state": "idle"}
 
