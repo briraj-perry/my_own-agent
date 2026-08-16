@@ -327,6 +327,46 @@ class NeoAgent(BaseAgent):
                 "output": f"🖼️ Attached {len(task.images)} image(s) for AI inspection."
             }
 
+        # Dynamic Workspace Directory & Codebase Analysis
+        code_files = file_tools.get_folder_code_files(target_folder)
+        existing_files_info = []
+        for cf in code_files:
+            f_res = file_tools.read_file(cf["rel_path"], folder=target_folder)
+            if f_res.get("status") == "success" and f_res.get("content"):
+                existing_files_info.append((cf, f_res.get("content", "")))
+
+        existing_context = ""
+        if existing_files_info:
+            yield {
+                "type": "state",
+                "mascot_state": "thinking",
+                "status": f"🔍 Analyzing workspace directory '{target_folder}' ({len(existing_files_info)} file(s) found)...",
+                "step": "analyze"
+            }
+            file_summary_list = [f"{cf['rel_path']} ({len(cnt.splitlines())} lines)" for cf, cnt in existing_files_info]
+            yield {
+                "type": "execution_log",
+                "mascot_state": "executing",
+                "command": f"analyze_directory('{target_folder}')",
+                "output": f"📂 Analyzed workspace directory '{target_folder}': Found {len(existing_files_info)} file(s): {', '.join(file_summary_list)}."
+            }
+
+            analyzed_names = ", ".join(f"`{cf['rel_path']}`" for cf, _ in existing_files_info)
+            yield {
+                "type": "token",
+                "content": f"🔍 **Workspace Directory Analyzed**: Inspected `{target_folder}` (Found {len(existing_files_info)} file(s): {analyzed_names}).\n\n🧠 **Preserving Architecture & Implementing Enhancements**: Inspecting existing codebase to seamlessly implement `{user_query}`...\n\n"
+            }
+
+            existing_snippets = [f"--- EXISTING SOURCE FILE: {cf['rel_path']} ---\n{cnt[:4000]}\n" for cf, cnt in existing_files_info]
+            existing_context = (
+                f"\n\n=== EXISTING WORKSPACE CODEBASE IN '{target_folder}' (CRITICAL PRESERVATION & ENHANCEMENT DIRECTIVE) ===\n"
+                "The following file(s) ALREADY exist in the target folder. Carefully inspect their structure, classes, functions, game loops, event handlers, and styling.\n"
+                "1. PRESERVE WORKING FEATURES: DO NOT remove, delete, or break existing working logic, controls, keybindings, rendering loops, or initialization.\n"
+                "2. SEAMLESS ENHANCEMENT: Integrate the user's requested additions, new features, or improvements directly into the existing architecture.\n"
+                "3. COMPLETE CODE OUTPUT: Output the 100% complete updated file content using ### FILE: path/to/file format (or standard markdown code block) with zero placeholders.\n\n"
+                + "\n".join(existing_snippets)
+            )
+
         if self.is_big_task(user_query):
             yield {
                 "type": "state",
@@ -340,7 +380,7 @@ class NeoAgent(BaseAgent):
             return
 
         messages = [
-            {"role": "system", "content": self.system_prompt},
+            {"role": "system", "content": self.system_prompt + existing_context},
             {"role": "user", "content": user_query + screen_context}
         ]
         
@@ -351,20 +391,50 @@ class NeoAgent(BaseAgent):
             full_response += token
             yield {"type": "token", "content": token}
             
-        # File extraction
+        # File extraction (multi-file or single-file fallback)
         blocks = extract_multi_file_blocks(full_response)
-        for fname, content in blocks.items():
-            if fname.endswith((".py", ".pyw")):
-                syntax = code_executor.validate_python_syntax(content)
-                if not syntax["valid"]:
-                    yield {"type": "execution_log", "command": f"AST Validation {fname}", "output": f"❌ Syntax error: {syntax['error']}"}
-                    continue
-            file_tools.write_file(fname, content, folder=target_folder)
-            yield {"type": "execution_log", "command": "write_file", "output": f"📝 Wrote {fname}"}
+        if blocks:
+            for fname, content in blocks.items():
+                if fname.endswith((".py", ".pyw")):
+                    syntax = code_executor.validate_python_syntax(content)
+                    if not syntax["valid"]:
+                        yield {"type": "execution_log", "command": f"AST Validation {fname}", "output": f"❌ Syntax error: {syntax['error']}"}
+                        continue
+                file_tools.write_file(fname, content, folder=target_folder)
+                yield {"type": "execution_log", "command": "write_file", "output": f"📝 Wrote {fname}"}
+        else:
+            extracted_code = extract_code_block(full_response)
+            if extracted_code and len(extracted_code) > 10:
+                # Dynamically choose target file from existing workspace files if matching
+                target_fname = None
+                if len(existing_files_info) == 1:
+                    target_fname = existing_files_info[0][0]["rel_path"]
+                elif existing_files_info:
+                    for cf, _ in existing_files_info:
+                        if cf["rel_path"].lower() in user_query.lower() or cf["name"].lower() in user_query.lower():
+                            target_fname = cf["rel_path"]
+                            break
+                    if not target_fname:
+                        target_fname = existing_files_info[0][0]["rel_path"]
+                else:
+                    target_fname = "index.html" if is_web else "main.py"
+
+                if target_fname.endswith((".py", ".pyw")):
+                    syntax = code_executor.validate_python_syntax(extracted_code)
+                    if not syntax["valid"]:
+                        yield {"type": "execution_log", "command": f"AST Validation {target_fname}", "output": f"❌ Syntax error: {syntax['error']}"}
+                    else:
+                        file_tools.write_file(target_fname, extracted_code, folder=target_folder)
+                        yield {"type": "execution_log", "command": "write_file", "output": f"📝 Wrote {target_fname}"}
+                else:
+                    file_tools.write_file(target_fname, extracted_code, folder=target_folder)
+                    yield {"type": "execution_log", "command": "write_file", "output": f"📝 Wrote {target_fname}"}
             
         patches = extract_file_patches(full_response)
         for patch in patches:
-            # We assume patch processing logic would normally go here if implemented, or we just notify
-            yield {"type": "execution_log", "command": "apply_patch", "output": f"🔧 Applied patch to {patch.get('file')}"}
-            
+            p_res = file_tools.patch_file(patch["file"], patch["target"], patch["replacement"], folder=target_folder)
+            if p_res.get("status") == "success":
+                yield {"type": "execution_log", "command": "apply_patch", "output": f"🔧 Applied patch to {patch.get('file')}"}
+
+        self.indexer.reindex()
         yield {"type": "state", "mascot_state": "idle", "status": "Ready"}

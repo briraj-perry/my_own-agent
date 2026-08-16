@@ -5,6 +5,7 @@ import urllib.request
 from typing import AsyncGenerator, Dict, Any, Optional, List
 
 from tools import file_tools
+from tools.code_formatter import format_code_content, auto_generate_missing_components
 from agent.prompts import CLAW_NEXTJS_SYSTEM_PROMPT
 
 
@@ -138,7 +139,8 @@ class ClawAgentEngine:
                 f"1. Carefully analyze the existing workspace files above and the user's issue description.\n"
                 f"2. Diagnose and fix any syntax errors, invalid CSS properties (e.g. background-end), broken React imports, or logic bugs.\n"
                 f"3. Return the COMPLETE, fixed content for each file that needs updating using ### FILE: path/to/file format!\n"
-                f"4. Do NOT wipe working code—preserve working features and layout while applying the fix."
+                f"4. CRITICAL: Never write minified or single-line code. Every import, hook, function, and JSX element must be on its own line.\n"
+                f"5. Do NOT wipe working code—preserve working features and layout while applying the fix."
             )
         else:
             user_prompt = (
@@ -146,7 +148,10 @@ class ClawAgentEngine:
                 f"User Prompt: {user_query}\n\n"
                 f"Target Working Directory: {target_folder}\n"
                 f"{existing_context}\n\n"
-                f"Make sure to output all necessary Next.js files (package.json, app/page.jsx, app/layout.jsx, app/globals.css, and any React components) using ### FILE: path/to/file format!"
+                f"=== CRITICAL INSTRUCTIONS ===\n"
+                f"1. Make sure to output all necessary Next.js files (package.json, app/page.jsx, app/layout.jsx, app/globals.css) using ### FILE: path/to/file format!\n"
+                f"2. COMPONENT FILES: If app/page.jsx imports custom components (e.g. '@/components/Navbar', '@/components/Hero'), you MUST output each component in its own ### FILE: components/ComponentName.jsx block!\n"
+                f"3. STRICT MULTI-LINE FORMAT: Never output minified or single-line code. Format all JSX, JS, CSS, and JSON with standard multi-line 2-space indentation."
             )
 
         req_payload = {
@@ -225,8 +230,13 @@ class ClawAgentEngine:
                     else:
                         parsed_files["components/AppUI.jsx"] = code_clean
 
-        # Filter out invalid filename matches like "Next.js"
-        INVALID_FILENAMES = ["next.js", "react.js", "vue.js", "node.js"]
+        # Filter out invalid framework filename matches like "next.js", "react.js"
+        INVALID_FILENAMES = {"next.js", "react.js", "vue.js", "node.js"}
+        parsed_files = {fn: c for fn, c in parsed_files.items() if fn.lower().strip() not in INVALID_FILENAMES}
+
+        # Auto-synthesize any missing imported React/Next.js components (e.g. Navbar, Hero, etc.)
+        parsed_files = auto_generate_missing_components(parsed_files, target_folder)
+
         # Guarantee Next.js App Router core files exist (app/page.jsx & app/layout.jsx) to prevent 404
         has_page = any(fn.replace("\\", "/") in ["app/page.jsx", "app/page.tsx", "app/page.js", "pages/index.jsx", "pages/index.js"] for fn in parsed_files.keys())
         has_layout = any(fn.replace("\\", "/") in ["app/layout.jsx", "app/layout.tsx", "app/layout.js"] for fn in parsed_files.keys())
@@ -272,8 +282,10 @@ class ClawAgentEngine:
 
         written_files = []
 
-
         for filename, content in parsed_files.items():
+            if filename.endswith((".css", ".scss")):
+                content = sanitize_css_content(content)
+            content = format_code_content(filename, content)
             res = file_tools.write_file(filename, content, folder=target_folder)
             if res.get("status") == "success":
                 written_files.append(filename)

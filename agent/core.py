@@ -15,6 +15,18 @@ from agent.planner import ExecutionPlanner, ExecutionPlan
 from agent.claw import ClawAgentEngine
 
 
+try:
+    from tools.code_formatter import format_code_content, unescape_string_literals
+except ImportError:
+    try:
+        from code_formatter import format_code_content, unescape_string_literals
+    except ImportError:
+        def format_code_content(filename: str, code: str) -> str:
+            return code
+        def unescape_string_literals(code: str) -> str:
+            return code
+
+
 def extract_filename_from_prompt(query: str) -> Optional[str]:
     """Extracts explicit filename from user query (e.g. test.py, notes.md, index.html)."""
     FRAMEWORK_EXCLUDES = ["next.js", "vue.js", "react.js", "node.js", "nuxt.js", "express.js", "chart.js", "three.js", "alpine.js", "ember.js"]
@@ -26,8 +38,8 @@ def extract_filename_from_prompt(query: str) -> Optional[str]:
     return None
 
 def sanitize_code_content(raw_code: str) -> str:
-    """Strips any leading/trailing markdown fence artifacts (e.g. ```html, ```css, ```js) from source code."""
-    content = raw_code.strip()
+    """Strips any leading/trailing markdown fence artifacts (e.g. ```html, ```css, ```js) and unescapes literals."""
+    content = unescape_string_literals(raw_code).strip()
     # Strip opening fence if present
     content = re.sub(r'^\s*```[a-zA-Z0-9_\-]*\s*\n?', '', content, flags=re.IGNORECASE)
     # Strip closing fence if present
@@ -49,20 +61,21 @@ def extract_code_block(text: str) -> str:
 
 
 def extract_multi_file_blocks(text: str) -> Dict[str, str]:
-    """Parses a multi-file LLM response into {filename: content} pairs."""
+    """Parses a multi-file LLM response into {filename: content} pairs with automatic code formatting."""
     files: Dict[str, str] = {}
     pattern = re.compile(
-        r'(?:###\s*FILE:\s*|---\s*FILE:\s*|\/\/\s*FILE:\s*|#\s*FILE:\s*)'
+        r'(?:###\s*FILE:\s*|---\s*FILE:\s*|\/\/\s*FILE:\s*|#\s*FILE:\s*|\*\*\s*FILE:\s*|\*\*\s*File:\s*|\bFILE:\s*)'
         r'([a-zA-Z0-9_\-\/\\.]+\.(?:html|css|jsx?|tsx?|json|py|md|mjs|cjs))'
         r'[\s\-\*\/]*\n'
         r'(?:```[a-zA-Z]*\n)?'
         r'(.*?)'
-        r'(?:\n```|\n(?=###|\/\/\s*FILE|#\s*FILE|---\s*FILE)|$)',
+        r'(?:\n```|\n(?=###|\/\/\s*FILE|#\s*FILE|---\s*FILE|\*\*\s*FILE|\bFILE:)|$)',
         re.DOTALL | re.IGNORECASE,
     )
     for match in pattern.finditer(text):
         filename = match.group(1).strip()
         content = sanitize_code_content(match.group(2))
+        content = format_code_content(filename, content)
         files[filename] = content
     return files
 
@@ -1078,7 +1091,6 @@ class NeoAgentCore:
             }
             yield {"type": "state", "mascot_state": "idle", "status": "Waiting for Ollama..."}
             return
-
         # Single-pass high-speed Ollama streaming
         yield {
             "type": "state",
@@ -1095,6 +1107,7 @@ class NeoAgentCore:
         py_names = [cf["name"] for cf in code_files_in_folder if cf.get("is_python")]
 
         folder_code_snippets = []
+        file_summary_list = []
         priority_names = {"index.html", "style.css", "script.js", "app.js", "main.py", "app.py", "script.py"}
         priority_files = [cf for cf in code_files_in_folder if cf["name"].lower() in priority_names or cf["name"].lower() in query_lower or cf["rel_path"].lower() in query_lower]
         other_files = [cf for cf in code_files_in_folder if cf not in priority_files]
@@ -1104,19 +1117,38 @@ class NeoAgentCore:
         current_chars = 0
 
         for cf in target_files_to_read:
-            if current_chars >= total_char_limit:
-                break
             f_res = file_tools.read_file(cf["rel_path"], folder=target_folder)
             if f_res.get("status") == "success" and f_res.get("content"):
-                content_snippet = f_res.get("content", "")[:4000]
-                folder_code_snippets.append(f"--- EXISTING WORKSPACE FILE: {cf['rel_path']} ---\n{content_snippet}\n")
-                current_chars += len(content_snippet)
+                content_snippet = f_res.get("content", "")
+                file_summary_list.append(f"{cf['rel_path']} ({len(content_snippet.splitlines())} lines)")
+                if current_chars < total_char_limit:
+                    folder_code_snippets.append(f"--- EXISTING WORKSPACE FILE: {cf['rel_path']} ---\n{content_snippet[:4000]}\n")
+                    current_chars += len(content_snippet[:4000])
+
+        if code_files_in_folder:
+            yield {
+                "type": "state",
+                "mascot_state": "thinking",
+                "status": f"🔍 Analyzing workspace directory '{target_folder}' ({len(code_files_in_folder)} file(s) found)...",
+                "step": "analyze"
+            }
+            yield {
+                "type": "execution_log",
+                "mascot_state": "executing",
+                "command": f"analyze_directory('{target_folder}')",
+                "output": f"📂 Analyzed workspace directory '{target_folder}': Found {len(code_files_in_folder)} file(s): {', '.join(file_summary_list)}."
+            }
 
         folder_code_context = ""
         if folder_code_snippets:
+            analyzed_names = ", ".join(f"`{cf['rel_path']}`" for cf in target_files_to_read[:len(folder_code_snippets)])
+            yield {
+                "type": "token",
+                "content": f"🔍 **Workspace Directory Analyzed**: Inspected `{target_folder}` (Found {len(folder_code_snippets)} existing file(s): {analyzed_names}).\n\n🧠 **Preserving Architecture & Implementing Enhancements**: Inspecting existing codebase to seamlessly implement `{user_query}`...\n\n"
+            }
             folder_code_context = (
-                f"\n\n[EXISTING WORKSPACE FILES IN '{target_folder}' — PRESERVE ALL EXISTING CODE & FEATURES]:\n"
-                "CRITICAL PRESERVATION DIRECTIVE: The user wants to modify or add code to this app/project. DO NOT remove, delete, or wipe existing buttons, HTML elements, CSS styles, or JS event handlers! "
+                f"\n\n=== EXISTING WORKSPACE FILES IN '{target_folder}' — PRESERVE ALL EXISTING CODE & FEATURES ===\n"
+                "CRITICAL PRESERVATION DIRECTIVE: The user wants to modify or add code to this app/project. DO NOT remove, delete, or wipe existing code, classes, functions, or game loops! "
                 "Return complete updated files that contain ALL pre-existing code AND your new additions integrated seamlessly:\n"
                 + "\n".join(folder_code_snippets)
             )
@@ -1187,105 +1219,131 @@ class NeoAgentCore:
                 headers={"Content-Type": "application/json"}
             )
 
-            def fetch_ollama_stream():
-                chunks = []
-                with urllib.request.urlopen(req, timeout=90.0) as response:
-                    for line in response:
-                        if line:
-                            try:
-                                obj = json.loads(line.decode('utf-8'))
-                                content = obj.get("message", {}).get("content", "")
-                                if content:
-                                    chunks.append(content)
-                                if obj.get("done", False):
-                                    break
-                            except Exception:
-                                pass
-                return chunks
+            def make_call():
+                return urllib.request.urlopen(req, timeout=120.0)
 
-            stream_chunks = await loop.run_in_executor(None, fetch_ollama_stream)
+            response = await loop.run_in_executor(None, make_call)
+        except Exception as e:
+            yield {
+                "type": "state",
+                "mascot_state": "idle",
+                "status": f"Ollama Error: {str(e)}",
+                "step": "error"
+            }
+            yield {
+                "type": "token",
+                "content": f"❌ **Error Connecting to Ollama Model `{target_llm_model}`**:\n```\n{str(e)}\n```"
+            }
+            return
 
-            for token in stream_chunks:
-                full_streamed_response += token
-                yield {"type": "token", "content": token}
-                await asyncio.sleep(0.001)
+        def read_stream_chunk():
+            chunks = []
+            while True:
+                line = response.readline()
+                if not line:
+                    break
+                try:
+                    chunk = json.loads(line.decode('utf-8'))
+                    token = chunk.get("message", {}).get("content", "")
+                    if token:
+                        chunks.append(token)
+                except Exception:
+                    continue
+            return chunks
 
-            # Check if response contains code block OR user had writing intent
-            has_code_block = "```" in full_streamed_response
+        stream_chunks = await loop.run_in_executor(None, read_stream_chunk)
 
-            # 1. --- Cursor-style Surgical Patch Extraction ---
-            patches = extract_file_patches(full_streamed_response)
-            if patches and permission_approved:
-                patched_files = []
-                for p in patches:
-                    p_res = file_tools.patch_file(p["file"], p["target"], p["replacement"], folder=target_folder)
-                    if p_res.get("status") == "success":
-                        patched_files.append(p["file"])
-                        yield {
-                            "type": "execution_log",
-                            "mascot_state": "executing",
-                            "command": f"cursor_patch_file('{p['file']}')",
-                            "output": f"✓ {p_res.get('message')}"
-                        }
-                if patched_files:
-                    self.indexer.reindex()
-                    yield {
-                        "type": "token",
-                        "content": f"\n\n⚡ **Surgically Patched Files**: {', '.join(f'`{pf}`' for pf in patched_files)}\n"
-                    }
+        for token in stream_chunks:
+            full_streamed_response += token
+            yield {"type": "token", "content": token}
+            await asyncio.sleep(0.001)
 
-            # 2. --- Multi-file Extraction (HTML, CSS, JS, Python, etc.) ---
-            multi_files = extract_multi_file_blocks(full_streamed_response)
-            if multi_files and permission_approved:
-                written_files = []
-                for mf_name, mf_content in multi_files.items():
-                    mf_res = file_tools.write_file(mf_name, mf_content, folder=target_folder)
-                    if mf_res.get("status") == "success":
-                        written_files.append(mf_name)
-                        yield {
-                            "type": "execution_log",
-                            "mascot_state": "executing",
-                            "command": f"physical_disk_write('{mf_res.get('path')}')",
-                            "output": f"✓ {mf_res.get('message')}\nFull Path: {mf_res.get('full_path')}"
-                        }
-                if written_files:
-                    self.indexer.reindex()
-                    report = self.analyze_and_verify_web_app(target_folder, written_files)
-                    file_list_str = ", ".join(f"`{wf}`" for wf in written_files)
+        # Check if response contains code block OR user had writing intent
+        has_code_block = "```" in full_streamed_response
+
+        # 1. --- Cursor-style Surgical Patch Extraction ---
+        patches = extract_file_patches(full_streamed_response)
+        if patches and permission_approved:
+            patched_files = []
+            for p in patches:
+                p_res = file_tools.patch_file(p["file"], p["target"], p["replacement"], folder=target_folder)
+                if p_res.get("status") == "success":
+                    patched_files.append(p["file"])
                     yield {
                         "type": "execution_log",
-                        "mascot_state": "ast_check",
-                        "command": "analyze_and_verify_web_app()",
-                        "output": f"🧪 Code Verification Complete: {len(written_files)} files written to disk, {report['pages_found']}+ Interactive Pages/Views verified."
+                        "mascot_state": "executing",
+                        "command": f"cursor_patch_file('{p['file']}')",
+                        "output": f"✓ {p_res.get('message')}"
                     }
-                    yield {
-                        "type": "token",
-                        "content": f"\n\n🌐 **Application Files Created & Written to Disk!** {len(written_files)} files: {file_list_str}\nFolder: `{target_folder}`\n"
-                    }
+            if patched_files:
+                self.indexer.reindex()
+                yield {
+                    "type": "token",
+                    "content": f"\n\n⚡ **Surgically Patched Files**: {', '.join(f'`{pf}`' for pf in patched_files)}\n"
+                }
 
-            # 3. --- Standard Single-File Extraction Fallback ---
-            elif (has_writing_intent or has_code_block or _is_web_request) and permission_approved:
-                extracted_code = extract_code_block(full_streamed_response)
-                
-                # Determine target filename
-                save_filename = target_filename
-                if not save_filename:
-                    fn_match = re.search(r'[\'"`]?([a-zA-Z0-9_\-\/]+\.(py|pyw|js|html|css|json|md|txt|cpp|c|sh|ps1))[\'"`]?', full_streamed_response, re.IGNORECASE)
-                    if fn_match:
-                        save_filename = fn_match.group(1).strip('\'"`')
-                    elif is_explicit_note:
-                        save_filename = "neo_note.md"
-                    elif "html" in full_streamed_response.lower() and "<html" in full_streamed_response.lower():
-                        save_filename = "index.html"
-                    elif "def " in extracted_code or "import " in extracted_code or "print(" in extracted_code or "python" in full_streamed_response.lower():
-                        save_filename = py_names[0] if py_names else "script.py"
-                    else:
-                        save_filename = "index.html" if _is_web_request else "script.py"
+        # 2. --- Multi-file Extraction (HTML, CSS, JS, Python, etc.) ---
+        multi_files = extract_multi_file_blocks(full_streamed_response)
+        if multi_files and permission_approved:
+            written_files = []
+            for mf_name, mf_content in multi_files.items():
+                mf_res = file_tools.write_file(mf_name, mf_content, folder=target_folder)
+                if mf_res.get("status") == "success":
+                    written_files.append(mf_name)
+                    yield {
+                        "type": "execution_log",
+                        "mascot_state": "executing",
+                        "command": f"physical_disk_write('{mf_res.get('path')}')",
+                        "output": f"✓ {mf_res.get('message')}\nFull Path: {mf_res.get('full_path')}"
+                    }
+            if written_files:
+                self.indexer.reindex()
+                report = self.analyze_and_verify_web_app(target_folder, written_files)
+                file_list_str = ", ".join(f"`{wf}`" for wf in written_files)
+                yield {
+                    "type": "execution_log",
+                    "mascot_state": "ast_check",
+                    "command": "analyze_and_verify_web_app()",
+                    "output": f"🧪 Code Verification Complete: {len(written_files)} files written to disk, {report['pages_found']}+ Interactive Pages/Views verified."
+                }
+                yield {
+                    "type": "token",
+                    "content": f"\n\n🌐 **Application Files Created & Written to Disk!** {len(written_files)} files: {file_list_str}\nFolder: `{target_folder}`\n"
+                }
+
+        # 3. --- Standard Single-File Extraction Fallback ---
+        elif (has_writing_intent or has_code_block or _is_web_request) and permission_approved:
+            extracted_code = extract_code_block(full_streamed_response)
+            
+            # Determine target filename dynamically
+            save_filename = target_filename
+            if not save_filename:
+                fn_match = re.search(r'[\'"`]?([a-zA-Z0-9_\-\/]+\.(py|pyw|js|html|css|json|md|txt|cpp|c|sh|ps1))[\'"`]?', full_streamed_response, re.IGNORECASE)
+                if fn_match:
+                    save_filename = fn_match.group(1).strip('\'"`')
+                elif is_explicit_note:
+                    save_filename = "neo_note.md"
+                elif len(target_files_to_read) == 1:
+                    save_filename = target_files_to_read[0]["rel_path"]
+                elif target_files_to_read:
+                    for cf in target_files_to_read:
+                        if cf["rel_path"].lower() in query_lower or cf["name"].lower() in query_lower:
+                            save_filename = cf["rel_path"]
+                            break
+                    if not save_filename:
+                        save_filename = target_files_to_read[0]["rel_path"]
+                elif "html" in full_streamed_response.lower() and "<html" in full_streamed_response.lower():
+                    save_filename = "index.html"
+                elif "def " in extracted_code or "import " in extracted_code or "print(" in extracted_code or "python" in full_streamed_response.lower():
+                    save_filename = py_names[0] if py_names else "script.py"
+                else:
+                    save_filename = "index.html" if _is_web_request else "script.py"
 
                 if extracted_code and len(extracted_code) > 10:
                     res = file_tools.write_file(save_filename, extracted_code, folder=target_folder)
                     if res.get("status") == "success":
                         self.indexer.reindex()
+
                         yield {
                             "type": "execution_log",
                             "mascot_state": "executing",
@@ -1362,12 +1420,6 @@ class NeoAgentCore:
                         "content": f"\n\n💾 **File Written to Disk**: `{res.get('path')}` ({res.get('lines')} lines, {res.get('bytes')} bytes)\nFull Path: `{res.get('full_path')}`\n"
                     }
                     self.indexer.reindex()
-
-        except Exception as e:
-            yield {
-                "type": "token",
-                "content": f"\n\n❌ **Ollama Stream Error**: {str(e)}\nMake sure model `{target_llm_model}` is pulled (`ollama pull {target_llm_model}`)."
-            }
 
         if full_streamed_response.strip():
             self.chat_history.append({"role": "user", "content": user_query})

@@ -96,23 +96,34 @@ def create_directory(rel_path: str, folder: str = ".") -> Dict[str, Any]:
     except Exception as e:
         return {"status": "error", "message": f"Failed to create directory '{rel_path}': {str(e)}"}
 
+try:
+    from tools.code_formatter import format_code_content
+except ImportError:
+    try:
+        from code_formatter import format_code_content
+    except ImportError:
+        def format_code_content(filename: str, code: str) -> str:
+            return code
+
+
 def write_file(rel_path: str, content: str, folder: str = ".") -> Dict[str, Any]:
-    """Writes code, text, or configuration files to ANY directory on system disk."""
+    """Writes code, text, or configuration files to ANY directory on system disk with automatic multi-line code formatting."""
     full_path = resolve_target_path(rel_path, folder)
     dir_name = os.path.dirname(full_path)
     
     try:
         if dir_name:
             os.makedirs(dir_name, exist_ok=True)
+        formatted_content = format_code_content(rel_path, content)
         with open(full_path, "w", encoding="utf-8") as f:
-            f.write(content)
-        lines = len(content.splitlines())
+            f.write(formatted_content)
+        lines = len(formatted_content.splitlines())
         return {
             "status": "success",
             "path": rel_path,
             "full_path": full_path,
             "lines": lines,
-            "bytes": len(content.encode("utf-8")),
+            "bytes": len(formatted_content.encode("utf-8")),
             "message": f"Successfully written file '{full_path}' ({lines} lines)."
         }
     except Exception as e:
