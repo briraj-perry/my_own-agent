@@ -46,10 +46,11 @@ class TestAgentCore(unittest.TestCase):
     def test_system_prompt_builder(self):
         """Test system prompt selection."""
         prompt = get_system_prompt("coding")
-        self.assertIn("advanced local AI Coding Agent", prompt)
+        self.assertIn("advanced AI Coding Agent", prompt)
 
         gen_prompt = get_system_prompt("general")
         self.assertIn("highly knowledgeable local AI assistant", gen_prompt)
+
 
     def test_permission_check_node(self):
         """Test check_permission node requiring approval for destructive tools."""
@@ -184,10 +185,12 @@ class TestAgentCore(unittest.TestCase):
             [
                 ("architecture", []),
                 ("interface", ["architecture"]),
-                ("implementation", ["architecture", "interface"]),
-                ("quality", ["interface", "implementation"]),
+                ("styling", ["architecture", "interface"]),
+                ("implementation", ["architecture", "interface", "styling"]),
+                ("eagle", ["interface", "implementation", "styling"]),
             ],
         )
+
 
         core.is_ollama_running = lambda: False
 
@@ -200,10 +203,92 @@ class TestAgentCore(unittest.TestCase):
 
         events = asyncio.run(collect_events())
         self.assertEqual(events[0]["type"], "coordination_update")
+        self.assertEqual(events[1]["type"], "agent_thinking_init")
+        self.assertGreater(events[1]["total_steps"], 0)
         updates = [event for event in events if event["type"] == "sub_agent_update"]
-        self.assertEqual(len(updates), 4)
+        self.assertEqual(len(updates), len(team))
         self.assertTrue(all(event["sub_agent"]["status"] == "failed" for event in updates))
+
+    def test_subagent_delegation_prompt_builder(self):
+        """Test build_subagent_delegation_prompt creates structured mission-critical prompts."""
+        from agent.prompts import build_subagent_delegation_prompt
+        prompt = build_subagent_delegation_prompt(
+            agent_name="Experience Agent",
+            agent_role="UI Engineer",
+            mission_goal="Build responsive semantic HTML5 layout.",
+            query="Build a dashboard web app",
+            target_file="index.html",
+            dependencies=["architecture"],
+            upstream_handoffs={"architecture": "Use dark theme palette: #0a0a0f with blue accents."},
+            workspace_context="Target folder: ./dashboard",
+            constraints=["ZERO PLACEHOLDERS: Generate 100% complete code.", "Include unique IDs on all buttons."]
+        )
+        self.assertIn("YOUR CORE MISSION & OBJECTIVES", prompt)
+        self.assertIn("UPSTREAM ARTIFACTS & HANDOFF CONTEXT", prompt)
+        self.assertIn("MANDATORY EXECUTION CONSTRAINTS", prompt)
+        self.assertIn("Use dark theme palette: #0a0a0f", prompt)
+        self.assertIn("TARGET DELIVERABLE: index.html", prompt)
+
+
+    def test_research_intelligence_team_and_22_substeps(self):
+        """Test research query builds 4-agent DAG with 22 sub-steps and rich telemetry."""
+        core = NeoAgentCore()
+        query = "What IBM Business Partners are actively working at Citigroup in the USA? Can you identify the areas they are working in?"
+        team = core._build_coordinated_team(query)
+        self.assertEqual(
+            [(agent.id, agent.dependencies) for agent in team],
+            [
+                ("draup", []),
+                ("nl2sql", ["draup"]),
+                ("coverage", ["draup", "nl2sql"]),
+                ("design_in", ["draup", "nl2sql", "coverage"]),
+            ]
+        )
+        total_substeps = sum(len(a.sub_steps) for a in team)
+        self.assertEqual(total_substeps, 22)
+        draup = team[0]
+        self.assertEqual(draup.duration, "10.8s")
+        self.assertEqual(draup.size, "56.2k")
+        self.assertEqual(draup.start_offset, "+5.7s")
+    def test_implementation_plan_prompt(self):
+        """Test implementation plan system prompt and selector."""
+        from agent.prompts import get_system_prompt, IMPLEMENTATION_PLAN_SYSTEM_PROMPT
+        prompt = get_system_prompt("implementation_plan")
+        self.assertIn("Implementation Plan", prompt)
+        self.assertIn("File Structure", prompt)
+        self.assertIn("Verification Checklist", prompt)
+        self.assertEqual(prompt, IMPLEMENTATION_PLAN_SYSTEM_PROMPT)
+
+    def test_web_app_system_prompt_requirements(self):
+        """Test web app prompt enforces minimum 3 views, functional buttons, and gradients."""
+        from agent.prompts import WEB_APP_SYSTEM_PROMPT
+        self.assertIn("MINIMUM 3 FUNCTIONAL PAGE VIEWS", WEB_APP_SYSTEM_PROMPT)
+        self.assertIn("EVERY BUTTON MUST BE FUNCTIONAL", WEB_APP_SYSTEM_PROMPT)
+        self.assertIn("CSS GRADIENT REQUIREMENTS", WEB_APP_SYSTEM_PROMPT)
+        self.assertIn("localStorage", WEB_APP_SYSTEM_PROMPT)
+
+    def test_extract_multi_file_blocks_with_fix_file(self):
+        """Test extraction of ### FIX_FILE and ### FILE blocks."""
+        from agent.core import extract_multi_file_blocks
+        sample_output = (
+            "### FIX_FILE: index.html\n"
+            "```html\n<!DOCTYPE html><html><body><h1>Updated</h1></body></html>\n```\n\n"
+            "### FIX_FILE: style.css\n"
+            "```css\nbody { background: #070a12; }\n```\n"
+        )
+        files = extract_multi_file_blocks(sample_output)
+        self.assertEqual(len(files), 2)
+        self.assertIn("index.html", files)
+        self.assertIn("style.css", files)
+        self.assertIn("<!DOCTYPE html>", files["index.html"])
+
+    def test_core_has_generate_implementation_plan(self):
+        """Test that NeoAgentCore provides generate_implementation_plan method."""
+        core = NeoAgentCore()
+        self.assertTrue(hasattr(core, "generate_implementation_plan"))
+        self.assertTrue(callable(getattr(core, "generate_implementation_plan")))
 
 
 if __name__ == "__main__":
     unittest.main()
+

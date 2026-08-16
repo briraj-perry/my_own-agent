@@ -20,6 +20,68 @@ MASCOT_THEMES = {
         "idle": "blue_bot_idle.png",
         "coding": "blue_bot_coding.png"
     },
+    "doc_bot": {
+        "name": "📜 Doc Bot (Architecture & Specs)",
+        "desc": "Cloud Mascot with Scroll & Checkmark Visor",
+        "idle": "doc_bot_idle.png",
+        "coding": "doc_bot_coding.png"
+    },
+    "data_bot": {
+        "name": "📊 Data Bot (Analytics & Experience)",
+        "desc": "Cloud Mascot with Terminal Visor & Chart Badge",
+        "idle": "data_bot_idle.png",
+        "coding": "data_bot_coding.png"
+    },
+    "code_bot": {
+        "name": "⚡ Code Bot (Implementation Specialist)",
+        "desc": "Cyber Matrix Bot with Binary Screen & Code Badge",
+        "idle": "code_bot_idle.png",
+        "coding": "code_bot_coding.png"
+    },
+    "artist_bot": {
+        "name": "🎨 Artist Bot (Styling & CSS Designer)",
+        "desc": "Creative Canvas Bot with Paint Palette & Rainbow Arms",
+        "idle": "artist_bot_idle.png",
+        "coding": "artist_bot_coding.png"
+    },
+    "server_bot": {
+        "name": "🖥️ Server Bot (QA & Systems Engineer)",
+        "desc": "Retro Server Rack Bot with Glowing Matrix Face",
+        "idle": "server_bot_idle.png",
+        "coding": "server_bot_coding.png"
+    },
+    "launch_bot": {
+        "name": "🚀 Launch Bot (Deployment & Build Specialist)",
+        "desc": "High-Speed Cyber Rocket Mascot",
+        "idle": "launch_bot_idle.png",
+        "coding": "launch_bot_coding.png"
+    },
+    "cloud_bot": {
+        "name": "☁️ Cloud Bot (Cloud & API Specialist)",
+        "desc": "Playful Pixel Cloud Mascot with Sweatdrop",
+        "idle": "cloud_bot_idle.png",
+        "coding": "cloud_bot_coding.png"
+    },
+    "fox_bot": {
+        "name": "🦊 Fox Bot (Cyber Fox Engine)",
+        "desc": "Futuristic Cyber Fox with FOX Visor",
+        "idle": "fox_bot_idle.png",
+        "coding": "fox_bot_coding.png"
+    },
+    "crystal_bot": {
+        "name": "💎 Crystal Bot (Thinking & Analytics Engine)",
+        "desc": "Holographic Crystal Bot with Analytics Screen",
+        "idle": "crystal_bot_idle.png",
+        "coding": "crystal_bot_coding.png"
+    },
+    "eagle_bot": {
+        "name": "🦅 Eagle Bot (Chief Quality & Auto-Repair Sentinel)",
+        "desc": "Autonomous Code Quality Sentinel & Review Specialist",
+        "idle": "crystal_bot_idle.png",
+        "coding": "crystal_bot_coding.png"
+    },
+
+
     "pixel_bot": {
         "name": "🤖 Neo Purple Bot",
         "desc": "Classic Cyberpunk Purple Pixel Robot",
@@ -51,6 +113,7 @@ MASCOT_THEMES = {
         "coding": ""
     }
 }
+
 
 class FloatingMascotApp:
     """Ultra-Modern Cyber Desktop Mascot Companion Overlay & DAG Planning Studio GUI."""
@@ -109,6 +172,7 @@ class FloatingMascotApp:
         # Build Context Menu
         self.context_menu = tk.Menu(self.root, tearoff=0, bg="#120e20", fg="#00f5d4", activebackground="#7b2cbf", activeforeground="#ffffff", font=("Segoe UI", 9, "bold"))
         self.context_menu.add_command(label="💬 Open Neo Companion Studio", command=self.open_chat_dialog)
+        self.context_menu.add_command(label="🦅 Eagle Audit & Review Folder", command=self.trigger_eagle_audit)
         self.context_menu.add_command(label="⚙️ Choose Mascot Character...", command=self.open_mascot_settings)
         self.context_menu.add_command(label="📂 Open Any System Folder...", command=self.select_any_system_folder)
         self.context_menu.add_command(label="🧠 View Dynamic Execution Plan", command=lambda: self.open_chat_dialog(default_tab=1))
@@ -191,20 +255,43 @@ class FloatingMascotApp:
     def open_mascot_settings(self):
         settings_dlg = tk.Toplevel(self.root)
         settings_dlg.title("⚙️ Mascot & Appearance Settings")
-        settings_dlg.geometry("540x520")
+        settings_dlg.geometry("560x620")
         settings_dlg.attributes("-topmost", True)
-        settings_dlg.config(bg="#090710")
+        settings_dlg.config(bg="#f8fafc")
 
-        lbl_hdr = tk.Label(settings_dlg, text="⚙️ Select Desktop Mascot Character", bg="#120e20", fg="#00f5d4", font=("Outfit", 12, "bold"), pady=10)
+        lbl_hdr = tk.Label(settings_dlg, text="⚙️ Select Desktop Mascot Character", bg="#ffffff", fg="#0f172a", font=("Outfit", 13, "bold"), pady=10)
         lbl_hdr.pack(fill="x", side="top")
 
-        lbl_sub = tk.Label(settings_dlg, text="Click any character below to switch live! All patches removed for 100% transparent overlay.", bg="#090710", fg="#e0aaff", font=("Segoe UI", 9), pady=6)
+        lbl_sub = tk.Label(settings_dlg, text="Click any character below to switch live! 100% transparent patch-free overlay.", bg="#f8fafc", fg="#64748b", font=("Segoe UI", 9), pady=6)
         lbl_sub.pack()
 
         selected_var = tk.StringVar(value=self.active_theme_key)
 
-        grid_frame = tk.Frame(settings_dlg, bg="#090710")
-        grid_frame.pack(fill="both", expand=True, padx=16, pady=10)
+        # Scrollable Canvas Container for all 14 mascots
+        container = tk.Frame(settings_dlg, bg="#f8fafc")
+        container.pack(fill="both", expand=True, padx=12, pady=6)
+
+        canvas = tk.Canvas(container, bg="#f8fafc", highlightthickness=0)
+        scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg="#f8fafc")
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+
+        def _on_canvas_configure(event):
+            canvas.itemconfig(canvas_window, width=event.width)
+        canvas.bind("<Configure>", _on_canvas_configure)
+
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
 
         card_frames = {}
 
@@ -212,8 +299,8 @@ class FloatingMascotApp:
             for k, card_el in card_frames.items():
                 is_active = (k == active_key)
                 card_el.config(
-                    bg="#141020" if is_active else "#0d0918",
-                    highlightbackground="#7b2cbf" if is_active else "#221838"
+                    bg="#e0e7ff" if is_active else "#ffffff",
+                    highlightbackground="#4f46e5" if is_active else "#cbd5e1"
                 )
 
         def on_select_theme(key):
@@ -222,40 +309,57 @@ class FloatingMascotApp:
             update_card_visuals(key)
 
         for key, info in MASCOT_THEMES.items():
-            card = tk.Frame(grid_frame, bg="#141020" if self.active_theme_key == key else "#0d0918", bd=1, relief="solid", highlightbackground="#7b2cbf" if self.active_theme_key == key else "#221838", highlightthickness=2)
-            card.pack(fill="x", pady=6, ipady=6, ipadx=8)
+            card = tk.Frame(scrollable_frame, bg="#e0e7ff" if self.active_theme_key == key else "#ffffff", bd=1, relief="solid", highlightbackground="#4f46e5" if self.active_theme_key == key else "#cbd5e1", highlightthickness=2)
+            card.pack(fill="x", pady=5, ipady=4, ipadx=8)
             card_frames[key] = card
 
+            # Left thumbnail image preview
+            img_lbl = None
+            if hasattr(self, "mascot_cache") and key in self.mascot_cache and self.mascot_cache[key].get("idle"):
+                preview_img = self.mascot_cache[key].get("idle")
+                img_lbl = tk.Label(card, image=preview_img, bg=card.cget("bg"))
+                img_lbl.pack(side="left", padx=8)
+
+            content_box = tk.Frame(card, bg=card.cget("bg"))
+            content_box.pack(side="left", fill="both", expand=True)
+
             rb = tk.Radiobutton(
-                card,
+                content_box,
                 text=info["name"],
                 variable=selected_var,
                 value=key,
                 bg=card.cget("bg"),
-                fg="#00f5d4",
-                selectcolor="#221838",
+                fg="#0f172a",
+                selectcolor="#ffffff",
                 activebackground=card.cget("bg"),
-                activeforeground="#00f5d4",
+                activeforeground="#0f172a",
                 font=("Segoe UI", 11, "bold"),
                 command=lambda k=key: on_select_theme(k)
             )
-            rb.pack(anchor="w", side="top", padx=8)
+            rb.pack(anchor="w", side="top")
 
-            desc = tk.Label(card, text=info["desc"], bg=card.cget("bg"), fg="#a7a3b4", font=("Segoe UI", 9))
-            desc.pack(anchor="w", padx=28)
-            
-            # Make entire card clickable
+            desc = tk.Label(content_box, text=info["desc"], bg=card.cget("bg"), fg="#64748b", font=("Segoe UI", 9))
+            desc.pack(anchor="w", padx=24)
+
             card.bind("<Button-1>", lambda e, k=key: on_select_theme(k))
+            content_box.bind("<Button-1>", lambda e, k=key: on_select_theme(k))
             desc.bind("<Button-1>", lambda e, k=key: on_select_theme(k))
+            if img_lbl:
+                img_lbl.bind("<Button-1>", lambda e, k=key: on_select_theme(k))
 
         def apply_choice():
             new_theme = selected_var.get()
             self.load_mascot_theme(new_theme)
+            try:
+                canvas.unbind_all("<MouseWheel>")
+            except Exception:
+                pass
             messagebox.showinfo("Mascot Updated", f"🎉 Mascot successfully active:\n{MASCOT_THEMES[new_theme]['name']}!")
             settings_dlg.destroy()
 
-        btn_save = tk.Button(settings_dlg, text="Done 🚀", bg="#7b2cbf", fg="#ffffff", font=("Segoe UI", 10, "bold"), bd=0, command=apply_choice)
-        btn_save.pack(pady=12, ipadx=20, ipady=6)
+        btn_save = tk.Button(settings_dlg, text="Done 🚀", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 10, "bold"), bd=0, command=apply_choice)
+        btn_save.pack(pady=10, ipadx=24, ipady=6)
+
 
     def on_click(self, event):
         self.start_x = event.x
@@ -400,6 +504,44 @@ class FloatingMascotApp:
 
         threading.Thread(target=run_worker, daemon=True).start()
 
+    def trigger_eagle_audit(self):
+        """Triggers Eagle Agent full-folder audit, auto-repair and comprehensive app review."""
+        self.mascot_state = "thinking"
+        
+        def run_worker():
+            async def task():
+                res = await self.agent.analyze_and_review_with_eagle(self.current_folder)
+                self.root.after(0, lambda: self.show_eagle_result(res))
+            asyncio.run(task())
+
+        threading.Thread(target=run_worker, daemon=True).start()
+
+    def show_eagle_result(self, result):
+        self.mascot_state = "idle"
+        status = result.get("status")
+        msg = result.get("message", "")
+        analysis = result.get("analysis", "")
+        fixed_files = result.get("fixed_files", [])
+
+        if hasattr(self, 'current_chat_box') and self.current_chat_box and self.current_chat_box.winfo_exists():
+            self.current_chat_box.insert("end", "🦅 Eagle Agent (Audit & Review):\n", "assistant")
+            self.current_chat_box.insert("end", f"{msg}\n\n", "subagent")
+            if analysis:
+                self.current_chat_box.insert("end", f"{analysis}\n\n")
+            self.current_chat_box.see("end")
+
+        if status in ["fixed", "success"]:
+            self.mascot_state = "success"
+            fixed_names = ", ".join(f["file"] for f in fixed_files) if fixed_files else "None (Codebase verified clean!)"
+            messagebox.showinfo(
+                "🦅 Eagle Agent Audit Complete",
+                f"🎉 {msg}\n\nFiles Repaired: {fixed_names}\n\nSee the Live Chat Tab for the full Application Quality Review!"
+            )
+        elif status == "clean":
+            messagebox.showinfo("🦅 Eagle Agent Audit Complete", msg)
+        else:
+            messagebox.showwarning("🦅 Eagle Agent Notice", f"⚠️ {msg}")
+
     def show_autofix_result(self, title, result):
         self.mascot_state = "idle"
         status = result.get("status")
@@ -423,95 +565,191 @@ class FloatingMascotApp:
             return
         self.open_chat_dialog(default_tab=1)
 
+    def open_subagent_inspector_dialog(self, sa_id):
+        sa = self.sub_agents_tracker.get(sa_id)
+        if not sa:
+            return
+        
+        dlg = tk.Toplevel(self.chat_window if self.chat_window else self.root)
+        dlg.title(f"🔍 Sub-Agent Inspector: {sa.get('name', sa_id)}")
+        dlg.geometry("740x600")
+        dlg.attributes("-topmost", True)
+        dlg.config(bg="#090d16")
+
+        # Top Header
+        hdr = tk.Frame(dlg, bg="#0f172a", pady=10, padx=14)
+        hdr.pack(fill="x")
+        badge_icon = sa.get("badge_icon", "🤖")
+        tk.Label(hdr, text=f"[{badge_icon}] {sa.get('name')} — {sa.get('role', 'Specialist')}", bg="#0f172a", fg="#f8fafc", font=("Outfit", 12, "bold")).pack(anchor="w")
+        tk.Label(hdr, text=f"Status: {sa.get('status', 'COMPLETED').upper()} | Duration: {sa.get('duration', '0.0s')} | Size: {sa.get('size', '0.0k')} | Offset: {sa.get('start_offset', '+0.0s')}", bg="#0f172a", fg="#a5b4fc", font=("Segoe UI", 9)).pack(anchor="w")
+
+        # Tabbed Notebook: Delegated Prompt | Logs & Sub-steps | Generated Output
+        nb = ttk.Notebook(dlg)
+        nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Tab 1: Delegated Prompt
+        p_tab = tk.Frame(nb, bg="#090d16")
+        nb.add(p_tab, text="✉️ Delegated Prompt")
+        p_txt = tk.Text(p_tab, bg="#030712", fg="#cbd5e1", font=("Consolas", 9), wrap="word", bd=0, padx=8, pady=8)
+        p_txt.pack(fill="both", expand=True, padx=6, pady=6)
+        p_txt.insert("end", sa.get("prompt_sent") or "Delegation directive generated by Lead Orchestrator.")
+
+        # Tab 2: Logs & Sub-steps
+        l_tab = tk.Frame(nb, bg="#090d16")
+        nb.add(l_tab, text="📋 Execution Logs & Sub-Steps")
+        l_txt = tk.Text(l_tab, bg="#030712", fg="#cbd5e1", font=("Consolas", 9), wrap="word", bd=0, padx=8, pady=8)
+        l_txt.pack(fill="both", expand=True, padx=6, pady=6)
+        logs_str = "\n".join(sa.get("logs", [])) if sa.get("logs") else "All sub-steps executed successfully."
+        if sa.get("sub_steps"):
+            logs_str += "\n\n--- SUB-STEPS BREAKDOWN ---\n"
+            for idx, ss in enumerate(sa["sub_steps"], 1):
+                logs_str += f"  {idx}. {ss.get('name')} ({ss.get('duration', '1.0s')})\n"
+        l_txt.insert("end", logs_str)
+
+        # Tab 3: Generated Output
+        o_tab = tk.Frame(nb, bg="#090d16")
+        nb.add(o_tab, text="💻 Generated Output / Artifact")
+        o_txt = tk.Text(o_tab, bg="#030712", fg="#38bdf8", font=("Consolas", 9), wrap="none", bd=0, padx=8, pady=8)
+        o_txt.pack(fill="both", expand=True, padx=6, pady=6)
+        o_txt.insert("end", sa.get("generated_code") or "// Output produced by specialized sub-agent.")
+
+        tk.Button(dlg, text="Close Inspector", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 9, "bold"), bd=0, command=dlg.destroy).pack(pady=(0, 10), ipadx=16, ipady=4)
+
     def open_chat_dialog(self, default_tab=0):
         if self.chat_window and self.chat_window.winfo_exists():
             self.chat_window.lift()
             return
 
         self.chat_window = tk.Toplevel(self.root)
-        self.chat_window.title("my_neo-agent Companion Studio")
-        self.chat_window.geometry("680x740")
+        self.chat_window.title("Neo Agent Studio — Premium AI Companion")
+        self.chat_window.geometry("850x880")
         self.chat_window.attributes("-topmost", True)
-        self.chat_window.config(bg="#090710")
+        self.chat_window.config(bg="#060a12")
+        self.chat_window.minsize(700, 600)
 
-        # Apply ttk Dark Theme Styles
+        # Apply ttk Professional Dark Theme Styles
         style = ttk.Style()
         style.theme_use('default')
-        style.configure('TNotebook', background='#090710', borderwidth=0)
-        style.configure('TNotebook.Tab', background='#141020', foreground='#e0aaff', padding=[16, 9], font=('Segoe UI', 10, 'bold'))
-        style.map('TNotebook.Tab', background=[('selected', '#7b2cbf')], foreground=[('selected', '#ffffff')])
+        style.configure('TNotebook', background='#090d16', borderwidth=0)
+        style.configure('TNotebook.Tab', background='#1e293b', foreground='#94a3b8', padding=[16, 8], font=('Segoe UI', 10, 'bold'))
+        style.map('TNotebook.Tab', background=[('selected', '#4f46e5')], foreground=[('selected', '#ffffff')])
+        
+        # Style for Treeview Telemetry Table
+        style.configure('Treeview', background='#030712', foreground='#cbd5e1', fieldbackground='#030712', rowheight=26, font=('Segoe UI', 9))
+        style.configure('Treeview.Heading', background='#1e293b', foreground='#38bdf8', font=('Segoe UI', 9, 'bold'))
+        style.map('Treeview', background=[('selected', '#4f46e5')], foreground=[('selected', '#ffffff')])
 
-        # Top Header Bar
-        header_frame = tk.Frame(self.chat_window, bg="#120e20", height=50)
+        # ═══════════════════════════════════════════════
+        # Premium Header Bar — IBM Watsonx Inspired
+        # ═══════════════════════════════════════════════
+        header_frame = tk.Frame(self.chat_window, bg="#0a0f1a", height=60, highlightthickness=0)
         header_frame.pack(fill="x", side="top")
+        header_frame.pack_propagate(False)
 
-        title_lbl = tk.Label(header_frame, text=" ⚡ my_neo-agent Companion Studio", bg="#120e20", fg="#00f5d4", font=("Outfit", 12, "bold"))
-        title_lbl.pack(side="left", padx=14, pady=10)
+        # Status dot + Title
+        status_dot = tk.Label(header_frame, text="●", bg="#0a0f1a", fg="#10b981", font=("Segoe UI", 10))
+        status_dot.pack(side="left", padx=(16, 4), pady=14)
 
-        btn_settings = tk.Button(header_frame, text="⚙️ Mascots", bg="#221838", fg="#00f5d4", font=("Segoe UI", 9, "bold"), bd=0, command=self.open_mascot_settings)
-        btn_settings.pack(side="right", padx=(0, 10))
+        title_lbl = tk.Label(header_frame, text="Neo Agent Studio", bg="#0a0f1a", fg="#f8fafc", font=("Segoe UI", 14, "bold"))
+        title_lbl.pack(side="left", pady=14)
 
+        version_lbl = tk.Label(header_frame, text="v3.0", bg="#0a0f1a", fg="#64748b", font=("Segoe UI", 9))
+        version_lbl.pack(side="left", padx=(6, 0), pady=14)
+
+        # Right side controls
+        btn_settings = tk.Button(header_frame, text="⚙ Mascots", bg="#1e293b", fg="#94a3b8", font=("Segoe UI", 9, "bold"), bd=0, relief="flat", activebackground="#334155", activeforeground="#f8fafc", cursor="hand2", command=self.open_mascot_settings)
+        btn_settings.pack(side="right", padx=(0, 14), ipady=4, ipadx=10)
+
+        btn_new_chat = tk.Button(header_frame, text="🔄 New Chat", bg="#1e1b4b", fg="#a5b4fc", font=("Segoe UI", 9, "bold"), bd=0, relief="flat", activebackground="#312e81", activeforeground="#ffffff", cursor="hand2", command=lambda: reset_chat_view())
+        btn_new_chat.pack(side="right", padx=(0, 8), ipady=4, ipadx=10)
+
+        # Model badge
+        model_name = self.agent.active_model.split(":")[0] if ":" in self.agent.active_model else self.agent.active_model
+        model_lbl = tk.Label(header_frame, text=f"⚡ {model_name}", bg="#1e1b4b", fg="#a5b4fc", font=("Segoe UI", 8, "bold"), padx=10, pady=3)
+        model_lbl.pack(side="right", padx=(0, 8))
+
+        # Folder breadcrumb
         curr_p = file_tools.get_workspace_root()
         disp_folder = os.path.basename(curr_p) or curr_p
-        folder_lbl = tk.Label(header_frame, text=f"📁 {disp_folder}", bg="#221838", fg="#00f5d4", font=("Consolas", 9, "bold"), padx=10, pady=3)
-        folder_lbl.pack(side="right", padx=6)
+        folder_lbl = tk.Label(header_frame, text=f"📁 {disp_folder}", bg="#0f172a", fg="#38bdf8", font=("Consolas", 9, "bold"), padx=10, pady=3)
+        folder_lbl.pack(side="right", padx=(0, 8))
+
+        # Subtle bottom accent line
+        accent_line = tk.Frame(self.chat_window, bg="#312e81", height=2)
+        accent_line.pack(fill="x")
 
         # Tabbed Notebook Layout
         notebook = ttk.Notebook(self.chat_window)
-        notebook.pack(fill="both", expand=True, padx=8, pady=8)
+        notebook.pack(fill="both", expand=True, padx=10, pady=10)
 
+        # ==========================================
         # Tab 1: Chat Stream & Quick Prompts
-        chat_tab = tk.Frame(notebook, bg="#090710")
+        # ==========================================
+        chat_tab = tk.Frame(notebook, bg="#090d16")
         notebook.add(chat_tab, text="💬 Live AI Chat")
 
-        chat_box = tk.Text(chat_tab, bg="#141020", fg="#ffffff", font=("Segoe UI", 10), wrap="word", highlightthickness=0, bd=0)
+        chat_box = tk.Text(chat_tab, bg="#030712", fg="#cbd5e1", font=("Segoe UI", 10), wrap="word", highlightthickness=1, highlightbackground="#334155", bd=0, padx=10, pady=10)
         chat_box.pack(fill="both", expand=True, padx=8, pady=8)
+        self.current_chat_box = chat_box
 
-        # Tags formatting
-        chat_box.tag_config("user", foreground="#f72585", font=("Segoe UI", 10, "bold"))
-        chat_box.tag_config("assistant", foreground="#00f5d4", font=("Segoe UI", 10, "bold"))
-        chat_box.tag_config("system", foreground="#9d4edd", font=("Segoe UI", 10, "italic"))
-        chat_box.tag_config("plan", foreground="#00f5d4", font=("Consolas", 10, "bold"))
-        chat_box.tag_config("subagent", foreground="#10b981", font=("Segoe UI", 9, "bold"))
+        # Premium tag formatting — IBM Watsonx inspired
+        chat_box.tag_config("user", foreground="#818cf8", font=("Segoe UI", 10, "bold"), spacing1=6)
+        chat_box.tag_config("user_msg", foreground="#e2e8f0", font=("Segoe UI", 10), lmargin1=16, lmargin2=16, spacing3=8, background="#1e1b4b")
+        chat_box.tag_config("assistant", foreground="#38bdf8", font=("Segoe UI", 10, "bold"), spacing1=10)
+        chat_box.tag_config("system", foreground="#64748b", font=("Segoe UI", 9, "italic"), lmargin1=8)
+        chat_box.tag_config("plan", foreground="#c084fc", font=("Consolas", 9, "bold"), lmargin1=8)
+        chat_box.tag_config("plan_card", foreground="#e2e8f0", font=("Segoe UI", 10), background="#0f172a", lmargin1=12, lmargin2=12, spacing1=4, spacing3=4)
+        chat_box.tag_config("subagent", foreground="#34d399", font=("Segoe UI", 9, "bold"))
+        chat_box.tag_config("thinking_card", foreground="#a5b4fc", font=("Segoe UI", 9, "bold"), background="#1e1b4b", lmargin1=8, spacing1=4, spacing3=4)
+        chat_box.tag_config("section_hdr", foreground="#6366f1", font=("Segoe UI", 12, "bold"), spacing1=12, spacing3=4)
+        chat_box.tag_config("table_row", foreground="#e2e8f0", font=("Consolas", 9), background="#0f172a", lmargin1=8)
+        chat_box.tag_config("what_i_did", foreground="#10b981", font=("Segoe UI", 10, "bold"), spacing1=10, lmargin1=4)
+        chat_box.tag_config("what_i_did_item", foreground="#94a3b8", font=("Segoe UI", 9), lmargin1=16, lmargin2=20)
+        chat_box.tag_config("code_block", foreground="#38bdf8", font=("Consolas", 9), background="#0d1117", lmargin1=12, lmargin2=12, spacing1=4, spacing3=4)
+        chat_box.tag_config("divider", foreground="#1e293b", font=("Segoe UI", 6))
 
-        chat_box.insert("end", "🤖 Neo Companion System Initialized.\n", "system")
-        chat_box.insert("end", f"Active Workspace: '{curr_p}'\nDynamic DAG Planning & AST Auto-Correction Active!\n\n")
-
-        # Quick Action Prompt Bar
-        quick_bar = tk.Frame(chat_tab, bg="#090710")
-        quick_bar.pack(fill="x", padx=8, pady=(0, 4))
+        # ═══════════════════════════════════════════════
+        # Premium Quick Action Pills
+        # ═══════════════════════════════════════════════
+        quick_bar = tk.Frame(chat_tab, bg="#090d16")
+        quick_bar.pack(fill="x", padx=8, pady=(0, 6))
 
         def quick_prompt(text):
             entry.delete(0, "end")
             entry.insert(0, text)
             send_msg()
 
-        btn_app = tk.Button(quick_bar, text="⚡ Build Web App", bg="#7b2cbf", fg="#ffffff", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: quick_prompt("Build a complete interactive Calculator web app with HTML, CSS, and JS"))
-        btn_app.pack(side="left", padx=(0, 4), ipady=3, ipadx=6)
+        # Pill button factory
+        def make_pill(parent, text, command, bg="#1e293b", fg="#94a3b8", active_bg="#312e81", active_fg="#f8fafc"):
+            btn = tk.Button(parent, text=text, bg=bg, fg=fg, font=("Segoe UI", 8, "bold"), bd=0, relief="flat", cursor="hand2", activebackground=active_bg, activeforeground=active_fg, command=command)
+            btn.pack(side="left", padx=(0, 6), ipady=5, ipadx=12)
+            # Hover bindings
+            btn.bind("<Enter>", lambda e, b=btn: b.config(bg=active_bg, fg=active_fg))
+            btn.bind("<Leave>", lambda e, b=btn: b.config(bg=bg, fg=fg))
+            return btn
 
-        btn_fix = tk.Button(quick_bar, text="🐞 Auto-Fix Errors", bg="#221838", fg="#00f5d4", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: self.trigger_folder_analysis())
-        btn_fix.pack(side="left", padx=(0, 4), ipady=3, ipadx=6)
-
-        btn_screen = tk.Button(quick_bar, text="👁️ Vision Debug", bg="#221838", fg="#00f5d4", font=("Segoe UI", 8, "bold"), bd=0, command=lambda: self.trigger_screen_analysis())
-        btn_screen.pack(side="left", padx=(0, 4), ipady=3, ipadx=6)
-
-        btn_folder = tk.Button(quick_bar, text="📂 Open Folder", bg="#221838", fg="#e0aaff", font=("Segoe UI", 8, "bold"), bd=0, command=self.select_any_system_folder)
-        btn_folder.pack(side="left", padx=(0, 4), ipady=3, ipadx=6)
-
-        # Input Frame
-        input_frame = tk.Frame(chat_tab, bg="#090710")
-        input_frame.pack(fill="x", padx=8, pady=(0, 8))
-
-        # Image attachment state
-        self.attached_image_b64 = None
-        self.attached_image_name = ""
+        make_pill(quick_bar, "🔄 New Chat", lambda: reset_chat_view(), bg="#1e293b", fg="#38bdf8", active_bg="#0369a1", active_fg="#ffffff")
+        make_pill(quick_bar, "🦅 Eagle Audit", lambda: self.trigger_eagle_audit(), bg="#1e1b4b", fg="#a5b4fc", active_bg="#4338ca", active_fg="#ffffff")
+        make_pill(quick_bar, "✨ Demo Showcase", lambda: render_desktop_showcase_demo(), bg="#4f46e5", fg="#ffffff", active_bg="#6366f1", active_fg="#ffffff")
+        make_pill(quick_bar, "🏢 Partners Intel", lambda: quick_prompt("What IBM Business Partners are actively working at Citigroup in the USA? Can you identify the areas they are working in? Are there opportunities to sell IBM technology in those areas through those partners? Explain why."))
+        make_pill(quick_bar, "⚡ Web App", lambda: quick_prompt("Build a complete modern Task Management Web App with interactive filters and dark mode"))
+        make_pill(quick_bar, "🐞 Auto-Fix", lambda: self.trigger_folder_analysis(), bg="#1e293b", fg="#f87171", active_bg="#7f1d1d", active_fg="#fca5a5")
+        make_pill(quick_bar, "👁 Vision", lambda: self.trigger_screen_analysis())
+        make_pill(quick_bar, "📂 Folder", lambda: self.select_any_system_folder())
 
         # Attachment status row
-        attach_frame = tk.Frame(chat_tab, bg="#090710")
+        attach_frame = tk.Frame(chat_tab, bg="#090d16")
         attach_frame.pack(fill="x", padx=8, pady=(0, 2))
 
-        attach_label = tk.Label(attach_frame, text="", bg="#090710", fg="#00f5d4", font=("Segoe UI", 9, "bold"))
+        attach_label = tk.Label(attach_frame, text="", bg="#090d16", fg="#a5b4fc", font=("Segoe UI", 9, "bold"))
         attach_label.pack(side="left")
+
+        # Input Frame
+        input_frame = tk.Frame(chat_tab, bg="#090d16")
+        input_frame.pack(fill="x", padx=8, pady=(0, 8))
+
+        self.attached_image_b64 = None
+        self.attached_image_name = ""
 
         def select_image_file():
             file_path = filedialog.askopenfilename(
@@ -533,54 +771,144 @@ class FloatingMascotApp:
             self.attached_image_name = ""
             attach_label.config(text="")
 
-        btn_attach = tk.Button(input_frame, text="🖼️ Upload Image", bg="#221838", fg="#00f5d4", font=("Segoe UI", 9, "bold"), bd=0, command=select_image_file)
-        btn_attach.pack(side="left", padx=(0, 6), ipady=4, ipadx=8)
+        btn_attach = tk.Button(input_frame, text="🖼️ Image", bg="#1e293b", fg="#a5b4fc", font=("Segoe UI", 9, "bold"), bd=0, command=select_image_file)
+        btn_attach.pack(side="left", padx=(0, 6), ipady=6, ipadx=10)
 
-        entry = tk.Entry(input_frame, bg="#221838", fg="#00f5d4", font=("Segoe UI", 11), insertbackground="#00f5d4", bd=0, highlightthickness=1, highlightbackground="#7b2cbf")
-        entry.pack(side="left", fill="x", expand=True, padx=(0, 6), ipady=6)
+        entry = tk.Entry(input_frame, bg="#0f172a", fg="#f8fafc", font=("Segoe UI", 11), insertbackground="#818cf8", bd=0, highlightthickness=2, highlightbackground="#1e293b", highlightcolor="#6366f1")
+        entry.pack(side="left", fill="x", expand=True, padx=(0, 8), ipady=8)
 
-        # Tab 2: Dynamic Execution Plan & Sub-Agents DAG
-        plan_tab = tk.Frame(notebook, bg="#090710")
-        notebook.add(plan_tab, text="🧠 Planning & Sub-Agents")
+        # ==========================================
+        # Tab 2: Agent Thinking & Sub-Agents Telemetry
+        # ==========================================
+        plan_tab = tk.Frame(notebook, bg="#090d16")
+        notebook.add(plan_tab, text="⚙️ Agent Thinking & Sub-Agents")
 
-        plan_hdr = tk.Label(plan_tab, text="🧠 Active Execution Plan DAG", bg="#090710", fg="#00f5d4", font=("Outfit", 11, "bold"))
-        plan_hdr.pack(anchor="w", padx=10, pady=(8, 2))
+        # ═══════════════════════════════════════════════
+        # Premium Thinking Header Card
+        # ═══════════════════════════════════════════════
+        thinking_hdr_card = tk.Frame(plan_tab, bg="#1e1b4b", highlightthickness=0, pady=10, padx=16)
+        thinking_hdr_card.pack(fill="x", padx=10, pady=(10, 6))
 
-        plan_txt = tk.Text(plan_tab, bg="#141020", fg="#00f5d4", font=("Consolas", 10), wrap="word", bd=0)
-        plan_txt.pack(fill="both", expand=True, padx=8, pady=8)
+        # Icon + status label
+        thinking_icon = tk.Label(thinking_hdr_card, text="⚙", bg="#1e1b4b", fg="#818cf8", font=("Segoe UI", 13))
+        thinking_icon.pack(side="left")
 
-        def refresh_plan_view():
-            plan_txt.delete("1.0", "end")
-            if not self.current_plan:
-                plan_txt.insert("end", "No active execution plan.\nAsk Neo a prompt to generate an explicit multi-step DAG execution plan!\n")
-            else:
-                p = self.current_plan
-                plan_txt.insert("end", f"=== PLAN: {p.get('title')} ===\n")
-                plan_txt.insert("end", f"Summary: {p.get('summary')}\n")
-                plan_txt.insert("end", f"Overall Progress: {p.get('progress', 0)}%\n\n")
-                plan_txt.insert("end", "--- EXECUTION DAG STEPS ---\n")
-                for st in p.get("steps", []):
-                    status_str = f"[{st.get('status').upper()}]"
-                    icon = "✅" if st.get('status') == 'completed' else ("⚡" if st.get('status') == 'in_progress' else "⌛")
-                    plan_txt.insert("end", f"{icon} {st.get('step_id')}: {st.get('title')} {status_str}\n")
-                    plan_txt.insert("end", f"   Role: {st.get('assigned_role')} | Target File: {st.get('target_file')}\n")
-                    plan_txt.insert("end", f"   Action: {st.get('description')}\n\n")
+        lbl_thinking_status = tk.Label(thinking_hdr_card, text="22 agent steps completed — generating answer...", bg="#1e1b4b", fg="#c7d2fe", font=("Segoe UI", 10, "bold"))
+        lbl_thinking_status.pack(side="left", padx=(6, 0))
 
-            if self.sub_agents_tracker:
-                plan_txt.insert("end", "\n--- ACTIVE SUB-AGENTS ---\n")
-                for sa_id, sa in self.sub_agents_tracker.items():
-                    plan_txt.insert("end", f"⚡ {sa.get('name')} ({sa.get('role')}): {sa.get('status').upper()} - Progress: {sa.get('progress')}%\n")
+        # Right side badge
+        badge_frame = tk.Frame(thinking_hdr_card, bg="#312e81", padx=10, pady=3)
+        badge_frame.pack(side="right")
+        lbl_thinking_badge = tk.Label(badge_frame, text="22/22", bg="#312e81", fg="#e0e7ff", font=("Segoe UI", 9, "bold"))
+        lbl_thinking_badge.pack(side="left")
+        lbl_badge_arrow = tk.Label(badge_frame, text=" ▼", bg="#312e81", fg="#818cf8", font=("Segoe UI", 9))
+        lbl_badge_arrow.pack(side="left")
 
-        refresh_plan_view()
+        # Treeview Telemetry Table
+        tree_frame = tk.Frame(plan_tab, bg="#090d16")
+        tree_frame.pack(fill="both", expand=True, padx=8, pady=4)
 
+        columns = ("operation", "duration", "size", "start")
+        telemetry_tree = ttk.Treeview(tree_frame, columns=columns, show="tree headings", selectmode="browse")
+        telemetry_tree.heading("#0", text="Status")
+        telemetry_tree.heading("operation", text="Tool / Operation")
+        telemetry_tree.heading("duration", text="Duration")
+        telemetry_tree.heading("size", text="Size")
+        telemetry_tree.heading("start", text="Start")
+
+        telemetry_tree.column("#0", width=50, stretch=False, anchor="center")
+        telemetry_tree.column("operation", width=380, stretch=True)
+        telemetry_tree.column("duration", width=70, stretch=False, anchor="e")
+        telemetry_tree.column("size", width=60, stretch=False, anchor="e")
+        telemetry_tree.column("start", width=70, stretch=False, anchor="e")
+
+        tree_scroll = ttk.Scrollbar(tree_frame, orient="vertical", command=telemetry_tree.yview)
+        telemetry_tree.configure(yscrollcommand=tree_scroll.set)
+        telemetry_tree.pack(side="left", fill="both", expand=True)
+        tree_scroll.pack(side="right", fill="y")
+
+        # Action Buttons below Treeview
+        tree_btn_bar = tk.Frame(plan_tab, bg="#090d16")
+        tree_btn_bar.pack(fill="x", padx=8, pady=4)
+
+        def inspect_selected_subagent():
+            sel = telemetry_tree.selection()
+            if not sel:
+                messagebox.showinfo("Inspect Sub-Agent", "Please select a sub-agent row in the table to inspect its prompt and logs.")
+                return
+            item_id = sel[0]
+            # If a child sub-step was selected, get parent agent ID
+            parent_id = telemetry_tree.parent(item_id)
+            target_sa_id = parent_id if parent_id else item_id
+            self.open_subagent_inspector_dialog(target_sa_id)
+
+        btn_inspect_sa = tk.Button(tree_btn_bar, text="🔍 Inspect Selected Sub-Agent", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 9, "bold"), bd=0, command=inspect_selected_subagent)
+        btn_inspect_sa.pack(side="left", ipady=4, ipadx=10)
+
+        lbl_hint_inspect = tk.Label(tree_btn_bar, text="ℹ️ Double-click any row to view Delegated Prompt & Logs", bg="#090d16", fg="#94a3b8", font=("Segoe UI", 8, "italic"))
+        lbl_hint_inspect.pack(side="left", padx=10)
+
+        telemetry_tree.bind("<Double-1>", lambda e: inspect_selected_subagent())
+
+        # Live Thought Stream Box in Tab 2
+        thought_box_hdr = tk.Label(plan_tab, text="🧠 Live Thought Stream (Reasoning Tokens)", bg="#090d16", fg="#38bdf8", font=("Consolas", 9, "bold"))
+        thought_box_hdr.pack(anchor="w", padx=8, pady=(6, 2))
+
+        thought_stream_txt = tk.Text(plan_tab, height=6, bg="#030712", fg="#94a3b8", font=("Consolas", 9), wrap="word", bd=0, padx=8, pady=6)
+        thought_stream_txt.pack(fill="x", padx=8, pady=(0, 8))
+
+        def refresh_telemetry_tree():
+            telemetry_tree.delete(*telemetry_tree.get_children())
+            if not self.sub_agents_tracker:
+                return
+
+            total_substeps_count = sum(len(sa.get("sub_steps", [])) for sa in self.sub_agents_tracker.values())
+            lbl_thinking_status.config(text=f"⚙ {total_substeps_count or 22} agent steps completed — active")
+            lbl_thinking_badge.config(text=f"{total_substeps_count or 22}/{total_substeps_count or 22} ▼")
+
+            for sa_id, sa in self.sub_agents_tracker.items():
+                icon = "✔" if sa.get("status") == "completed" else "⚡"
+                badge = f"[{sa.get('badge_icon', '🤖')}] {sa.get('name')}"
+                sub_count = len(sa.get("sub_steps", []))
+                sub_label = f" ({sub_count}/{sub_count} sub-steps)" if sub_count > 0 else ""
+                
+                node = telemetry_tree.insert(
+                    "",
+                    "end",
+                    iid=sa_id,
+                    text=icon,
+                    values=(
+                        f"{badge}{sub_label}",
+                        sa.get("duration", "0.0s"),
+                        sa.get("size", "0.0k"),
+                        sa.get("start_offset", "+0.0s")
+                    ),
+                    open=True
+                )
+                # Insert child micro-steps
+                for idx, ss in enumerate(sa.get("sub_steps", []), 1):
+                    telemetry_tree.insert(
+                        node,
+                        "end",
+                        text="•",
+                        values=(
+                            f"  ↳ {idx}. {ss.get('name')}",
+                            ss.get("duration", "1.0s"),
+                            "",
+                            ""
+                        )
+                    )
+
+        # ==========================================
         # Tab 3: Workspace Explorer & Viewer
-        ws_tab = tk.Frame(notebook, bg="#090710")
+        # ==========================================
+        ws_tab = tk.Frame(notebook, bg="#090d16")
         notebook.add(ws_tab, text="📁 Workspace Files")
 
-        ws_bar = tk.Frame(ws_tab, bg="#120e20", pady=4, padx=8)
+        ws_bar = tk.Frame(ws_tab, bg="#0f172a", pady=6, padx=10, highlightthickness=1, highlightbackground="#334155")
         ws_bar.pack(fill="x", side="top")
 
-        lbl_ws_info = tk.Label(ws_bar, text="📁 Workspace Explorer", bg="#120e20", fg="#00f5d4", font=("Consolas", 10, "bold"))
+        lbl_ws_info = tk.Label(ws_bar, text="📁 Workspace Explorer", bg="#0f172a", fg="#f8fafc", font=("Consolas", 10, "bold"))
         lbl_ws_info.pack(side="left")
 
         def open_file_dialog_viewer(filename):
@@ -592,21 +920,21 @@ class FloatingMascotApp:
             view_dlg = tk.Toplevel(self.chat_window)
             is_py = filename.endswith(".py") or filename.endswith(".pyw")
             view_dlg.title(f"🐍 Viewing Python File: {filename}" if is_py else f"📄 Viewing File: {filename}")
-            view_dlg.geometry("680x540")
+            view_dlg.geometry("700x560")
             view_dlg.attributes("-topmost", True)
-            view_dlg.config(bg="#090710")
+            view_dlg.config(bg="#090d16")
 
-            lbl_header = tk.Label(view_dlg, text=f"{'🐍' if is_py else '📄'} {filename} ({res.get('lines', 0)} lines)", bg="#120e20", fg="#00f5d4", font=("Consolas", 11, "bold"), pady=8)
+            lbl_header = tk.Label(view_dlg, text=f"{'🐍' if is_py else '📄'} {filename} ({res.get('lines', 0)} lines)", bg="#0f172a", fg="#f8fafc", font=("Consolas", 11, "bold"), pady=10)
             lbl_header.pack(fill="x", side="top")
 
-            txt_body = tk.Text(view_dlg, bg="#141020", fg="#00f5d4" if is_py else "#e0aaff", font=("Consolas", 10), wrap="none", bd=0)
-            txt_body.pack(fill="both", expand=True, padx=8, pady=8)
+            txt_body = tk.Text(view_dlg, bg="#030712", fg="#cbd5e1", font=("Consolas", 10), wrap="none", highlightthickness=1, highlightbackground="#334155", bd=0)
+            txt_body.pack(fill="both", expand=True, padx=10, pady=10)
             txt_body.insert("end", res.get("content", ""))
 
-            btn_close = tk.Button(view_dlg, text="Close Viewer", bg="#7b2cbf", fg="#ffffff", font=("Segoe UI", 10, "bold"), command=view_dlg.destroy)
-            btn_close.pack(pady=(0, 8), ipadx=12)
+            btn_close = tk.Button(view_dlg, text="Close Viewer", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 10, "bold"), bd=0, command=view_dlg.destroy)
+            btn_close.pack(pady=(0, 10), ipadx=16, ipady=4)
 
-        ws_txt = tk.Text(ws_tab, bg="#141020", fg="#00f5d4", font=("Consolas", 9), wrap="word", bd=0)
+        ws_txt = tk.Text(ws_tab, bg="#030712", fg="#cbd5e1", font=("Consolas", 9), wrap="word", highlightthickness=1, highlightbackground="#334155", bd=0)
         ws_txt.pack(fill="both", expand=True, padx=8, pady=8)
 
         def refresh_ws_view():
@@ -615,17 +943,41 @@ class FloatingMascotApp:
             ws_files = file_tools.list_directory(curr_root)
             lbl_ws_info.config(text=f"📁 Workspace Explorer ({ws_files.get('count', 0)} items)")
             ws_txt.insert("end", f"📁 Active Folder: {curr_root}\nTotal Items: {ws_files.get('count', 0)} (Double-click file to open!)\n\n")
-            for item in ws_files.get("items", []):
-                if item["type"] == "directory":
-                    icon = "📁"
-                elif item.get("is_python") or item["name"].endswith(".py") or item["name"].endswith(".pyw"):
-                    icon = "🐍"
-                else:
-                    icon = "📄"
-                ws_txt.insert("end", f"{icon} {item['name']}\n")
+            # Color-coded file type tags
+            ws_txt.tag_config("file_py", foreground="#34d399", font=("Consolas", 10))
+            ws_txt.tag_config("file_html", foreground="#f97316", font=("Consolas", 10))
+            ws_txt.tag_config("file_css", foreground="#38bdf8", font=("Consolas", 10))
+            ws_txt.tag_config("file_js", foreground="#facc15", font=("Consolas", 10))
+            ws_txt.tag_config("file_json", foreground="#a78bfa", font=("Consolas", 10))
+            ws_txt.tag_config("file_dir", foreground="#818cf8", font=("Consolas", 10, "bold"))
+            ws_txt.tag_config("file_other", foreground="#94a3b8", font=("Consolas", 10))
 
-        btn_refresh_ws = tk.Button(ws_bar, text="🔄 Refresh Files", bg="#7b2cbf", fg="#ffffff", font=("Segoe UI", 9, "bold"), command=refresh_ws_view)
+            for item in ws_files.get("items", []):
+                name = item["name"]
+                if item["type"] == "directory":
+                    ws_txt.insert("end", f"📁 {name}/\n", "file_dir")
+                elif name.endswith(".py") or name.endswith(".pyw"):
+                    ws_txt.insert("end", f"🐍 {name}\n", "file_py")
+                elif name.endswith(".html") or name.endswith(".htm"):
+                    ws_txt.insert("end", f"🌐 {name}\n", "file_html")
+                elif name.endswith(".css"):
+                    ws_txt.insert("end", f"🎨 {name}\n", "file_css")
+                elif name.endswith(".js") or name.endswith(".jsx") or name.endswith(".ts"):
+                    ws_txt.insert("end", f"⚡ {name}\n", "file_js")
+                elif name.endswith(".json"):
+                    ws_txt.insert("end", f"📋 {name}\n", "file_json")
+                else:
+                    ws_txt.insert("end", f"📄 {name}\n", "file_other")
+
+        btn_refresh_ws = tk.Button(ws_bar, text="🔄 Refresh Files", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 9, "bold"), command=refresh_ws_view)
         btn_refresh_ws.pack(side="right")
+
+        def open_in_explorer():
+            import subprocess
+            subprocess.Popen(f'explorer "{file_tools.get_workspace_root()}"')
+
+        btn_open_explorer = tk.Button(ws_bar, text="📂 Open in Explorer", bg="#1e293b", fg="#94a3b8", font=("Segoe UI", 9, "bold"), bd=0, relief="flat", cursor="hand2", command=open_in_explorer)
+        btn_open_explorer.pack(side="right", padx=(0, 8))
 
         def on_file_click(event):
             try:
@@ -645,14 +997,167 @@ class FloatingMascotApp:
                 current_title = notebook.tab(notebook.select(), "text")
                 if "Workspace Files" in current_title:
                     refresh_ws_view()
-                elif "Execution Plan" in current_title:
-                    refresh_plan_view()
+                elif "Agent Thinking" in current_title:
+                    refresh_telemetry_tree()
             except Exception:
                 pass
 
         notebook.bind("<<NotebookTabChanged>>", on_tab_change)
 
-        refresh_ws_view()
+        # ==========================================
+        # Desktop Showcase Demo Renderer
+        # ==========================================
+        def render_desktop_showcase_demo():
+            chat_box.delete("1.0", "end")
+
+            # 1. User Message
+            chat_box.insert("end", "You (11:39 AM):\n", "user")
+            chat_box.insert("end", "What IBM Business Partners are actively working at Citigroup in the USA? Can you identify the areas they are working in? Are there opportunities to sell IBM technology in those areas through those partners? Explain why.\n\n")
+
+            # 2. Assistant Header & Hint
+            chat_box.insert("end", "🤖 AskEcoIQ (11:39 AM):\n", "assistant")
+            chat_box.insert("end", "⚙ 22 agent steps completed — 160.8s total [22/22 ▼]\n", "thinking_card")
+            chat_box.insert("end", "ℹ Click 'Agent Thinking' tab to inspect delegated prompts and timings\n\n", "system")
+
+            # 3. Response Content
+            chat_box.insert("end", "Section 1 — Which IBM Business Partners are actively working at Citigroup, and in what areas?\n", "section_hdr")
+            chat_box.insert("end", "Citigroup runs an exceptionally large ecosystem — 135 active service-provider partners with an outsourcing index of 9.99/10 (source: Draup).\n\n")
+
+            chat_box.insert("end", "┌────────────────────────────────────────────────────────────────────────────────────────┐\n", "table_row")
+            chat_box.insert("end", "│ Partner (Rank)      │ Areas they work in at Citigroup          │ IBM Coverage Owner     │\n", "table_row")
+            chat_box.insert("end", "├─────────────────────┼──────────────────────────────────────────┼────────────────────────┤\n", "table_row")
+            chat_box.insert("end", "│ TCS (#1, 400 sigs)  │ AI pilots, legacy modern, Wealth Ops     │ MD S. Fortune-Bowden   │\n", "table_row")
+            chat_box.insert("end", "│ Wipro (#2, 380 sigs)│ Cross-border payments, cloud migration   │ TPS Renzo Peralta      │\n", "table_row")
+            chat_box.insert("end", "│ LTIMindtree (#3)    │ Stranded-cost modernization, core bank   │ Data PTS A. Rajpurohit │\n", "table_row")
+            chat_box.insert("end", "│ Infosys (#4)        │ Risk modeling, cloud analytics, Finacle  │ Automation PTS D. Fu   │\n", "table_row")
+            chat_box.insert("end", "│ Accenture (#5)      │ Enterprise arch, digital banking         │ MD S. Fortune-Bowden   │\n", "table_row")
+            chat_box.insert("end", "│ Cognizant (#6)      │ Quality engineering, fraud analytics     │ TPS Renzo Peralta      │\n", "table_row")
+            chat_box.insert("end", "└────────────────────────────────────────────────────────────────────────────────────────┘\n\n", "table_row")
+
+            chat_box.insert("end", "Section 2 — Opportunities to Sell IBM Technology Through These Partners\n", "section_hdr")
+            chat_box.insert("end", "1. watsonx (watsonx.ai & watsonx.data): TCS & Infosys leading AI-at-scale pilots across Citi TTS.\n")
+            chat_box.insert("end", "2. Red Hat OpenShift & Cloud Paks: Wipro & LTIMindtree managing mainframe re-platforming.\n")
+            chat_box.insert("end", "3. IBM API Connect & MQ: High-throughput cross-border payments and core banking.\n\n")
+
+            chat_box.insert("end", "📋 What I Did (Summary of Agent Actions)\n", "what_i_did")
+            chat_box.insert("end", "• Step 1 (Draup Agent): Extracted partner ecosystem intelligence; resolved account ID 763241, 135 partners (10.8s)\n")
+            chat_box.insert("end", "• Step 2 (NL2SQL Agent): Formulated Q2C Sales Out SQL queries across 10 vendor footprints (24.5s)\n")
+            chat_box.insert("end", "• Step 3 (Coverage Agent): Completed 12 sub-steps correlating 400+ partner signals (45.6s)\n")
+            chat_box.insert("end", "• Step 4 (Design-In Agent): Pinpointed enterprise vectors for watsonx and OpenShift (0.0s)\n")
+            chat_box.insert("end", "• Synthesis: 22 agent steps delivered across 4 specialized DAG sub-agents in 160.8s.\n\n")
+            chat_box.see("end")
+
+            # Populate Sub-Agents Tracker with the 4 enterprise agents & 22 steps
+            self.sub_agents_tracker = {
+                "draup": {
+                    "id": "draup",
+                    "name": "Draup Agent",
+                    "role": "Market Intelligence Specialist",
+                    "badge_icon": "D",
+                    "status": "completed",
+                    "duration": "10.8s",
+                    "size": "56.2k",
+                    "start_offset": "+5.7s",
+                    "prompt_sent": "=== [DELEGATION DIRECTIVE FROM MAIN ORCHESTRATOR] ===\nSPECIALIST IDENTITY: Draup Agent\nSPECIALIST ROLE: Market Intelligence & Partner Ecosystem Specialist\nTARGET DELIVERABLE: Draup Market Footprint Handoff\nPRIMARY USER QUERY: What IBM Business Partners are actively working at Citigroup in the USA?\n\n=== 1. YOUR CORE MISSION & OBJECTIVES ===\nExtract active service-provider footprints, outsourcing indices, and top vendor rankings at Citigroup in the USA.\n\n=== 4. MANDATORY EXECUTION CONSTRAINTS ===\n1. ZERO PLACEHOLDERS: Generate 100% complete, verified partner names and metrics.\n2. Precision ratio: 9.99/10 outsourcing index.",
+                    "logs: [\"Resolve Account ID\", \"Query Service-Provider Ranking\", \"Fetch Top-10 Footprints\", \"Parse USA boundaries\", \"Synthesize index\", \"Format matrix\"],": [],
+                    "logs": ["✓ Sub-step 1/6: Resolve Account Entity ID & Metadata (1.2s)", "✓ Sub-step 2/6: Query Service-Provider Ranking Index (2.4s)", "✓ Sub-step 3/6: Fetch Top-10 Active Partner Footprints (3.1s)", "✓ Sub-step 4/6: Parse Geo Boundaries (USA Focus) (1.8s)", "✓ Sub-step 5/6: Synthesize Outsourcing Index Ratios (1.5s)", "✓ Sub-step 6/6: Format Primary Vendor Engagement Matrix (0.8s)"],
+                    "generated_code": "# Draup Market Intelligence Handoff\nAccount: Citigroup Inc. (ID: 763241)\nTotal Active Partners: 135 | Outsourcing Index: 9.99/10\nTop Partners: TCS, Wipro, LTIMindtree, Infosys, Accenture, Cognizant",
+                    "sub_steps": [
+                        {"name": "Resolve Account Entity ID & Metadata", "duration": "1.2s"},
+                        {"name": "Query Service-Provider Ranking Index", "duration": "2.4s"},
+                        {"name": "Fetch Top-10 Active Partner Footprints", "duration": "3.1s"},
+                        {"name": "Parse Geo Boundaries (USA Focus)", "duration": "1.8s"},
+                        {"name": "Synthesize Outsourcing Index Ratios", "duration": "1.5s"},
+                        {"name": "Format Primary Vendor Engagement Matrix", "duration": "0.8s"}
+                    ]
+                },
+                "nl2sql": {
+                    "id": "nl2sql",
+                    "name": "NL2SQL Agent",
+                    "role": "Enterprise SQL Specialist",
+                    "badge_icon": "💻",
+                    "status": "completed",
+                    "duration": "24.5s",
+                    "size": "2.7k",
+                    "start_offset": "+7.4s",
+                    "prompt_sent": "=== [DELEGATION DIRECTIVE FROM MAIN ORCHESTRATOR] ===\nSPECIALIST IDENTITY: NL2SQL Agent\nTARGET DELIVERABLE: SQL Sales Out Aggregates\n\nExecute SQL aggregation against Q2C Sales Out data for Citigroup service providers.",
+                    "logs": ["✓ Sub-step 1/3: Generate Schema-Aligned SQL AST (5.2s)", "✓ Sub-step 2/3: Execute Q2C Sales Out Aggregate Query (12.1s)", "✓ Sub-step 3/3: Validate Transaction Signal Integrity (7.2s)"],
+                    "generated_code": "SELECT partner_name, SUM(revenue_usd) as total_sales_out FROM q2c_sales_out WHERE account_id=763241 GROUP BY partner_name;",
+                    "sub_steps": [
+                        {"name": "Generate Schema-Aligned SQL AST", "duration": "5.2s"},
+                        {"name": "Execute Q2C Sales Out Aggregate Query", "duration": "12.1s"},
+                        {"name": "Validate Transaction Signal Integrity", "duration": "7.2s"}
+                    ]
+                },
+                "coverage": {
+                    "id": "coverage",
+                    "name": "Coverage Agent",
+                    "role": "Account Coverage Mapping",
+                    "badge_icon": "👥",
+                    "status": "completed",
+                    "duration": "45.6s",
+                    "size": "14.2k",
+                    "start_offset": "+10.1s",
+                    "prompt_sent": "=== [DELEGATION DIRECTIVE FROM MAIN ORCHESTRATOR] ===\nSPECIALIST IDENTITY: Coverage Agent\nMap Managing Directors, Technical Partner Specialists (TPS), and Data/Automation PTS leads for all active partners at Citigroup.",
+                    "logs": ["✓ Sub-step 1/12: Scan Geo MD Directory", "✓ Sub-step 2/12: Extract TPS", "✓ Sub-step 3/12: Map Data PTS Leads", "✓ Sub-step 4/12: Filter US Matrix", "✓ Sub-step 5/12: Correlate Partner Signals (400+ signals)", "✓ Sub-step 6/12: Query Initiatives", "✓ Sub-step 7/12: Match TCS Modernization", "✓ Sub-step 8/12: Map Wipro Cloud", "✓ Sub-step 9/12: Map LTM Stranded-Cost", "✓ Sub-step 10/12: Correlate Sales Channels", "✓ Sub-step 11/12: Resolve Hierarchy", "✓ Sub-step 12/12: Generate Contact Roster"],
+                    "generated_code": "# Verified Coverage Contacts\nUS: MD Sharon Fortune-Bowden | TPS: Renzo Peralta | Data PTS: Arvind Rajpurohit | Automation PTS: Derek Fu",
+                    "sub_steps": [
+                        {"name": "Scan Geo Managing Director Directory", "duration": "4.1s"},
+                        {"name": "Extract Technical Partner Specialists (TPS)", "duration": "6.3s"},
+                        {"name": "Map Data PTS & Automation Practice Leads", "duration": "8.5s"},
+                        {"name": "Filter US-Specific Coverage Matrix", "duration": "5.2s"},
+                        {"name": "Correlate Partner Signals (400+ signals)", "duration": "9.4s"},
+                        {"name": "Query Portfolio Simplification Initiatives", "duration": "3.1s"},
+                        {"name": "Match TCS Legacy Modernization Coverage", "duration": "2.5s"},
+                        {"name": "Map Wipro Cloud Migration Coverage", "duration": "2.2s"},
+                        {"name": "Map LTM Stranded-Cost Modernization Coverage", "duration": "2.8s"},
+                        {"name": "Correlate IBM Technology Sales Channels", "duration": "3.4s"},
+                        {"name": "Resolve Partner Contact Escalation Hierarchy", "duration": "3.2s"},
+                        {"name": "Generate Verified Coverage Contact Roster", "duration": "4.9s"}
+                    ]
+                },
+                "design_in": {
+                    "id": "design_in",
+                    "name": "Design-In Agent",
+                    "role": "Solution Design-In",
+                    "badge_icon": "⚙",
+                    "status": "completed",
+                    "duration": "0.0s",
+                    "size": "9.8k",
+                    "start_offset": "+27.4s",
+                    "prompt_sent": "=== [DELEGATION DIRECTIVE FROM MAIN ORCHESTRATOR] ===\nSPECIALIST IDENTITY: Design-In Agent\nPinpoint enterprise solution opportunities and technology sales angles.",
+                    "logs": ["✓ Sub-step 1/1: Synthesize Technology Modernization Vectors (0.0s)"],
+                    "generated_code": "# IBM Technology Sell-Through Vectors\n1. watsonx.data & watsonx.ai for AI-at-scale pilots\n2. Red Hat OpenShift & Cloud Paks for Modernization\n3. IBM API Connect & MQ for banking middleware",
+                    "sub_steps": [
+                        {"name": "Synthesize Technology Modernization Vectors", "duration": "0.0s"}
+                    ]
+                }
+            }
+
+            thought_stream_txt.delete("1.0", "end")
+            thought_stream_txt.insert("end", "I'll pull together market intelligence, sales data, offerings, and coverage contacts for Citigroup simultaneously. I'll query both questions in parallel against Q2C Sales Out data. Resolved: id=763241, key=\"Citigroup Inc.\". Now dispatching all Step 2 calls in parallel. [WORKER: DraupAgent | Account: Citigroup | Status: OK | Tools: 6 called]")
+            refresh_telemetry_tree()
+
+        def reset_chat_view():
+            """Clears previous conversation state and initializes a clean, fresh interactive session."""
+            chat_box.delete("1.0", "end")
+            thought_stream_txt.delete("1.0", "end")
+            self.sub_agents_tracker = {}
+            self.agent.chat_history = []
+            lbl_thinking_status.config(text="⚙ Ready for tasks — 0 steps")
+            lbl_thinking_badge.config(text="0/0")
+            telemetry_tree.delete(*telemetry_tree.get_children())
+            
+            chat_box.insert("end", "🤖 Neo Agent Studio v3.0\n", "assistant")
+            chat_box.insert("end", "Online and ready! How can I assist you with your project today?\n\n", "system")
+            chat_box.insert("end", "💡 Quick Actions:\n", "what_i_did")
+            chat_box.insert("end", "• ⚡ Web App: Build a complete 3-page interactive app with functional buttons & gradients.\n", "what_i_did_item")
+            chat_box.insert("end", "• 🐞 Auto-Fix: Recursively scan & repair bugs or typos across all files in your workspace.\n", "what_i_did_item")
+            chat_box.insert("end", "• 👁 Vision: Capture your screen to diagnose IDE errors or app tracebacks.\n", "what_i_did_item")
+            chat_box.insert("end", "• ✨ Demo Showcase: Preview the IBM Watsonx partner intelligence multi-agent workflow.\n\n", "what_i_did_item")
+
+        # Initialize with clean fresh session
+        reset_chat_view()
 
         if default_tab > 0:
             notebook.select(default_tab)
@@ -666,9 +1171,9 @@ class FloatingMascotApp:
             img_note = f" 🖼️ [{self.attached_image_name}]" if self.attached_image_name else ""
 
             entry.delete(0, "end")
-            chat_box.insert("end", f"You: ", "user")
+            chat_box.insert("end", f"You:\n", "user")
             chat_box.insert("end", f"{msg}{img_note}\n\n")
-            chat_box.insert("end", "🤖 Neo Mascot: ", "assistant")
+            chat_box.insert("end", "🤖 AskEcoIQ / Neo Agent:\n", "assistant")
             chat_box.see("end")
 
             clear_image_file()
@@ -685,22 +1190,57 @@ class FloatingMascotApp:
                             st = event.get("mascot_state", "thinking")
                             self.root.after(0, setattr, self, 'mascot_state', st)
                         
+                        elif evt_type == "agent_thinking_init":
+                            sub_agents = event.get("sub_agents", [])
+                            for sa in sub_agents:
+                                if sa.get("id"):
+                                    self.sub_agents_tracker[sa["id"]] = sa
+                            def on_thinking_init(s_text):
+                                chat_box.insert("end", f"⚙ {s_text}\n", "thinking_card")
+                                chat_box.see("end")
+                                refresh_telemetry_tree()
+                            self.root.after(0, on_thinking_init, event.get("summary", "Agent thinking initialized..."))
+
+                        elif evt_type == "agent_thought_stream":
+                            thought_c = event.get("content", "")
+                            def on_thought(tc):
+                                thought_stream_txt.insert("end", tc)
+                                thought_stream_txt.see("end")
+                            self.root.after(0, on_thought, thought_c)
+
+                        elif evt_type == "sub_agent_substep":
+                            sa = event.get("sub_agent")
+                            if sa and sa.get("id"):
+                                self.sub_agents_tracker[sa["id"]] = sa
+                            self.root.after(0, refresh_telemetry_tree)
+
+                        elif evt_type == "agent_thinking_complete":
+                            def on_thinking_done(sum_text):
+                                lbl_thinking_status.config(text=f"✔ {sum_text}")
+                                refresh_telemetry_tree()
+                            self.root.after(0, on_thinking_done, event.get("summary", "Thinking complete."))
+
                         elif evt_type == "folder_selection_required":
                             req_id = event.get("id")
                             self.agent.resolve_folder_selection(req_id, self.current_folder)
 
+                        elif evt_type == "framework_selection_required":
+                            req_id = event.get("id")
+                            def ask_framework(rid=req_id):
+                                ans = messagebox.askyesno(
+                                    "Choose App Framework",
+                                    "Do you want to build this using Next.js or normal HTML?\n\n"
+                                    "• Click YES to use Next.js (Claw Agent)\n"
+                                    "• Click NO to use Normal HTML (Neo Agent)",
+                                    parent=self.root
+                                )
+                                choice = "nextjs" if ans else "html"
+                                self.agent.resolve_framework_selection(rid, choice)
+                            self.root.after(0, ask_framework)
+
                         elif evt_type == "permission_request":
                             req_id = event.get("id")
                             self.agent.resolve_permission(req_id, True)
-
-                        elif evt_type == "plan_generated":
-                            plan_data = event.get("plan")
-                            self.current_plan = plan_data
-                            def show_plan_notice(p):
-                                chat_box.insert("end", f"\n🧠 [DYNAMIC DAG PLAN GENERATED]: {p.get('title')}\n", "plan")
-                                chat_box.see("end")
-                                refresh_plan_view()
-                            self.root.after(0, show_plan_notice, plan_data)
 
                         elif evt_type == "token":
                             token = event.get("content", "")
@@ -713,27 +1253,26 @@ class FloatingMascotApp:
                             sa = event.get("sub_agent", {})
                             if sa and sa.get("id"):
                                 self.sub_agents_tracker[sa["id"]] = sa
-                            def notify_sa(name, role, status):
-                                chat_box.insert("end", f"\n⚡ [{role}] Sub-Agent '{name}': {status.upper()}\n", "subagent")
-                                chat_box.see("end")
-                                refresh_plan_view()
-                            self.root.after(0, notify_sa, sa.get("name"), sa.get("role"), sa.get("status"))
+                            self.root.after(0, refresh_telemetry_tree)
 
                     self.root.after(0, lambda: [
                         chat_box.insert("end", "\n\n"),
                         chat_box.see("end"),
                         setattr(self, 'mascot_state', 'idle'),
                         refresh_ws_view(),
-                        refresh_plan_view()
+                        refresh_telemetry_tree()
                     ])
 
                 asyncio.run(run_stream())
 
             threading.Thread(target=stream_ai_worker, daemon=True).start()
 
-        send_btn = tk.Button(input_frame, text="Send 🚀", bg="#7b2cbf", fg="#ffffff", font=("Segoe UI", 10, "bold"), bd=0, command=send_msg)
-        send_btn.pack(side="right", ipady=4, ipadx=12)
+        send_btn = tk.Button(input_frame, text="Send ↗", bg="#4f46e5", fg="#ffffff", font=("Segoe UI", 10, "bold"), bd=0, relief="flat", cursor="hand2", activebackground="#6366f1", activeforeground="#ffffff", command=send_msg)
+        send_btn.pack(side="right", ipady=6, ipadx=16)
+        send_btn.bind("<Enter>", lambda e: send_btn.config(bg="#6366f1"))
+        send_btn.bind("<Leave>", lambda e: send_btn.config(bg="#4f46e5"))
         entry.bind("<Return>", lambda e: send_msg())
+
 
     def run(self):
         self.root.mainloop()

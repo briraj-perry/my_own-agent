@@ -114,7 +114,13 @@
                     <div class="chat-title">
                         <i class="fa-solid fa-comments"></i> Stream Conversation
                     </div>
-                    <div class="chat-actions">
+                    <div class="chat-actions" style="display: flex; align-items: center; gap: 8px;">
+                        <button id="eagle-audit-btn" class="cyber-button secondary" title="Eagle Agent: Deep Full-Folder Audit & Auto-Repair" style="padding: 4px 10px; font-size: 0.76rem; border-color: rgba(168, 85, 247, 0.4); color: #c084fc;">
+                            <i class="fa-solid fa-feather-pointed"></i> 🦅 Eagle Audit
+                        </button>
+                        <button id="load-showcase-btn" class="cyber-button secondary" title="Load Enterprise Agent Intelligence Showcase" style="padding: 4px 10px; font-size: 0.76rem; border-color: rgba(99, 102, 241, 0.4); color: #a5b4fc;">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Demo Showcase
+                        </button>
                         <button id="clear-chat-btn" class="icon-btn" title="Clear Chat Window">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
@@ -130,7 +136,7 @@
                         <div class="msg-bubble">
                             <div class="msg-author">NEO Multi-Agent System Initialized</div>
                             <div class="msg-content">
-                                Welcome to <strong>my_neo-agent Sub-Agent Edition</strong>. Ask me to build complex applications, generate code lines, or write notes. I automatically spawn specialized sub-agents for large tasks!
+                                Welcome to <strong>my_neo-agent Sub-Agent Edition</strong>. Ask me to query partner intelligence, build complex applications, or analyze data. Specialized sub-agents are spawned with high-power prompts and real-time telemetry!
                             </div>
                         </div>
                     </div>
@@ -138,6 +144,17 @@
 
                 <!-- Prompt Input Bar -->
                 <div class="chat-input-area">
+                    <div class="quick-prompts-bar" id="quick-prompts-bar">
+                        <button class="quick-prompt-chip" data-query="What IBM Business Partners are actively working at Citigroup in the USA? Can you identify the areas they are working in? Are there opportunities to sell IBM technology in those areas through those partners? Explain why.">
+                            <i class="fa-solid fa-building-columns"></i> Citigroup IBM Partners & Intelligence
+                        </button>
+                        <button class="quick-prompt-chip" data-query="Build a complete modern Task Management Web App with dark cyberpunk UI, interactive filters, animations, and local storage">
+                            <i class="fa-solid fa-layer-group"></i> Build Task Management App
+                        </button>
+                        <button class="quick-prompt-chip" data-query="Create a real-time Financial Analytics Dashboard with charts, responsive grid layout, and metrics">
+                            <i class="fa-solid fa-chart-line"></i> Financial Analytics Dashboard
+                        </button>
+                    </div>
                     <form id="chat-form" class="input-form">
                         <div class="textarea-wrapper">
                             <div id="image-preview-bar" class="image-preview-bar hidden"></div>
@@ -146,7 +163,7 @@
                                     <i class="fa-solid fa-paperclip"></i>
                                 </button>
                                 <input type="file" id="image-upload-input" accept="image/*" multiple style="display: none;">
-                                <textarea id="user-input" placeholder="Ask Neo to build an app or inspect attached images..." rows="1"></textarea>
+                                <textarea id="user-input" placeholder="Ask Neo to build an app or query intelligence..." rows="1"></textarea>
                             </div>
                         </div>
                         <button type="submit" id="send-btn" class="cyber-button primary">
@@ -155,6 +172,7 @@
                     </form>
                 </div>
             </section>
+
 
             <!-- Right Panel: Sub-Agents Tracker & Execution Log -->
             <aside class="execution-panel glass-panel">
@@ -320,6 +338,49 @@
         </div>
     </div>
 
+    <!-- Framework Selection Modal Prompt Overlay (Next.js vs HTML) -->
+    <div class="modal-overlay" id="framework-modal">
+        <div class="modal-card glass-panel-modal">
+            <div class="modal-header">
+                <div class="modal-warning-icon" style="color: #4cc9f0; background: rgba(76,201,240,0.1);">
+                    <i class="fa-solid fa-cubes"></i>
+                </div>
+                <div>
+                    <h2>Choose App Framework</h2>
+                    <p class="modal-subtitle">Do you want to build this using Next.js or normal HTML?</p>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <p style="color: #e2e8f0; font-size: 0.95rem; margin-bottom: 16px;">
+                    Select your preferred framework for this application:
+                </p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div id="framework-card-nextjs" class="framework-card-option selected" style="border: 2px solid #4cc9f0; background: rgba(76, 201, 240, 0.12); padding: 18px; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.2s ease;">
+                        <i class="fa-brands fa-react" style="font-size: 2.2rem; color: #61dafb; margin-bottom: 8px;"></i>
+                        <h3 style="color: #ffffff; margin: 6px 0; font-size: 1.1rem;">Next.js App</h3>
+                        <p style="font-size: 0.8rem; color: #a0aec0; margin: 0;">Powered by <strong>Claw Agent</strong><br>(Next.js & React Architect)</p>
+                    </div>
+                    <div id="framework-card-html" class="framework-card-option" style="border: 2px solid rgba(247, 37, 133, 0.4); background: rgba(247, 37, 133, 0.06); padding: 18px; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.2s ease;">
+                        <i class="fa-brands fa-html5" style="font-size: 2.2rem; color: #e34f26; margin-bottom: 8px;"></i>
+                        <h3 style="color: #ffffff; margin: 6px 0; font-size: 1.1rem;">Normal HTML</h3>
+                        <p style="font-size: 0.8rem; color: #a0aec0; margin: 0;">Powered by <strong>Neo Agent</strong><br>(HTML/CSS/JS Engine)</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="justify-content: flex-end; gap: 10px;">
+                <button id="framework-confirm-html-btn" class="cyber-button secondary">
+                    <i class="fa-solid fa-code"></i> Normal HTML (Neo Agent)
+                </button>
+                <button id="framework-confirm-nextjs-btn" class="cyber-button primary">
+                    <i class="fa-solid fa-bolt"></i> Next.js (Claw Agent)
+                </button>
+            </div>
+        </div>
+    </div>
+
+
     <!-- Sub-Agent Inspector Modal (Requirement 2) -->
     <div class="modal-overlay" id="subagent-modal">
         <div class="modal-card glass-panel-modal subagent-modal-card">
@@ -341,17 +402,23 @@
                 </div>
 
                 <div class="sa-tabs">
-                    <button class="sa-tab active" id="sa-tab-logs"><i class="fa-solid fa-list-check"></i> Execution Logs</button>
-                    <button class="sa-tab" id="sa-tab-code"><i class="fa-solid fa-code"></i> Generated Code</button>
+                    <button class="sa-tab active" id="sa-tab-logs"><i class="fa-solid fa-list-check"></i> Execution Logs & Sub-Steps</button>
+                    <button class="sa-tab" id="sa-tab-prompt"><i class="fa-solid fa-paper-plane"></i> Delegated Prompt</button>
+                    <button class="sa-tab" id="sa-tab-code"><i class="fa-solid fa-code"></i> Generated Output</button>
                 </div>
 
                 <div class="sa-tab-content active" id="sa-content-logs">
                     <pre class="sa-log-body" id="sa-inspector-logs"></pre>
                 </div>
 
+                <div class="sa-tab-content" id="sa-content-prompt">
+                    <pre class="sa-log-body" id="sa-inspector-prompt" style="color: #cbd5e1; white-space: pre-wrap; font-family: var(--font-mono);"></pre>
+                </div>
+
                 <div class="sa-tab-content" id="sa-content-code">
                     <pre class="sa-code-body"><code id="sa-inspector-code"></code></pre>
                 </div>
+
             </div>
         </div>
     </div>

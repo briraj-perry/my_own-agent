@@ -1,1 +1,8 @@
-python main.py --web --port 8000 --host 127.0.0.1 --reload
+"""Neo Agent Convenience Entry Point."""
+import sys
+from main import main
+
+if __name__ == "__main__":
+    if len(sys.argv) == 1:
+        sys.argv.append("--desktop")
+    main()

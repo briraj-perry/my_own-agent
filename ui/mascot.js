@@ -6,6 +6,21 @@ class MascotWidget {
         this.image = document.getElementById(imageId);
         if (!this.image) return;
 
+        this.subagentAssets = {
+            doc_bot: 'assets/mascots/doc_bot_idle.png',
+            data_bot: 'assets/mascots/data_bot_idle.png',
+            code_bot: 'assets/mascots/code_bot_idle.png',
+            artist_bot: 'assets/mascots/artist_bot_coding.png',
+            server_bot: 'assets/mascots/server_bot_idle.png',
+            launch_bot: 'assets/mascots/launch_bot_idle.png',
+            cloud_bot: 'assets/mascots/cloud_bot_idle.png',
+            fox_bot: 'assets/mascots/fox_bot_idle.png',
+            crystal_bot: 'assets/mascots/crystal_bot_idle.png',
+            cyber_cat: 'assets/mascots/cyber_cat_idle.png',
+        };
+
+
+
         this.assets = {
             idle: 'assets/mascots/blue_bot_idle.png',
             coding: 'assets/mascots/blue_bot_coding.png',
@@ -14,12 +29,13 @@ class MascotWidget {
     }
 
     setState(newState, label) {
-        const isCoding = ['thinking', 'executing', 'self_correcting'].includes(newState);
-        const visualState = isCoding ? 'coding' : 'idle';
-
-        this.image.src = this.assets[visualState];
-        this.image.alt = visualState === 'coding' ? 'Neo coding mascot' : 'Neo idle mascot';
-        this.image.className = `mascot-image ${visualState}`;
+        if (this.subagentAssets[newState]) {
+            this.image.src = this.subagentAssets[newState];
+        } else {
+            const isCoding = ['thinking', 'executing', 'self_correcting', 'claw'].includes(newState);
+            const visualState = isCoding ? 'coding' : 'idle';
+            this.image.src = this.assets[visualState];
+        }
 
         const badge = document.getElementById('mascot-state-badge');
         if (badge) {
@@ -35,3 +51,4 @@ class MascotWidget {
 window.addEventListener('DOMContentLoaded', () => {
     window.mascot = new MascotWidget('mascot-image');
 });
+

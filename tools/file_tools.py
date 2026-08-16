@@ -54,8 +54,12 @@ def list_workspace_folders() -> List[str]:
 def get_folder_code_files(folder_path: str = ".") -> List[Dict[str, Any]]:
     """Recursively finds all Python (.py, .pyw) and source code files inside folder_path."""
     full_root = resolve_target_path(folder_path) if folder_path != "." else CURRENT_WORKSPACE_ROOT
-    exclude_dirs = {".git", "__pycache__", "node_modules", ".venv", "venv", ".chromadb", ".idea", ".vscode"}
-    allowed_exts = {".py", ".pyw", ".js", ".html", ".css", ".json", ".md", ".txt", ".sh", ".ps1", ".cpp", ".c", ".h", ".cs", ".java"}
+    exclude_dirs = {
+        ".git", "__pycache__", "node_modules", ".venv", "venv", ".chromadb", 
+        ".idea", ".vscode", ".next", "build", "dist", "out", ".output", "coverage", ".turbo"
+    }
+    allowed_exts = {".py", ".pyw", ".js", ".jsx", ".ts", ".tsx", ".html", ".css", ".json", ".md", ".txt", ".sh", ".ps1", ".cpp", ".c", ".h", ".cs", ".java"}
+
 
     code_files = []
     if not os.path.exists(full_root):
@@ -186,3 +190,60 @@ def list_directory(rel_path: str = ".") -> Dict[str, Any]:
         }
     except Exception as e:
         return {"status": "error", "message": f"Failed to list directory '{rel_path}': {str(e)}"}
+
+def patch_file(rel_path: str, target_snippet: str, replacement_snippet: str, folder: str = ".") -> Dict[str, Any]:
+    """Cursor-style surgical search-and-replace block edit on target file.
+    
+    Replaces exact target_snippet with replacement_snippet in rel_path without rewriting the entire file.
+    """
+    full_path = resolve_target_path(rel_path, folder)
+    if not os.path.exists(full_path):
+        return {"status": "error", "message": f"File '{full_path}' does not exist."}
+
+    try:
+        with open(full_path, "r", encoding="utf-8", errors="ignore") as f:
+            content = f.read()
+
+        clean_target = target_snippet.strip()
+        if not clean_target:
+            return {"status": "error", "message": "Target snippet cannot be empty."}
+
+        norm_content = content.replace("\r\n", "\n")
+        norm_target = target_snippet.replace("\r\n", "\n")
+        norm_replacement = replacement_snippet.replace("\r\n", "\n")
+
+        if norm_target in norm_content:
+            new_content = norm_content.replace(norm_target, norm_replacement, 1)
+        else:
+            lines = norm_content.splitlines()
+            target_lines = [l.strip() for l in norm_target.splitlines() if l.strip()]
+            if not target_lines:
+                return {"status": "error", "message": "Target snippet contains no valid lines."}
+
+            matched = False
+            for i in range(len(lines) - len(target_lines) + 1):
+                window = [l.strip() for l in lines[i:i + len(target_lines)]]
+                if window == target_lines:
+                    lines[i:i + len(target_lines)] = norm_replacement.splitlines()
+                    new_content = "\n".join(lines)
+                    matched = True
+                    break
+
+            if not matched:
+                return {
+                    "status": "error",
+                    "message": f"Could not locate target snippet inside '{rel_path}'. Verify lines and indentation."
+                }
+
+        with open(full_path, "w", encoding="utf-8") as f:
+            f.write(new_content)
+
+        return {
+            "status": "success",
+            "path": rel_path,
+            "full_path": full_path,
+            "lines": len(new_content.splitlines()),
+            "message": f"Successfully patched file '{full_path}'."
+        }
+    except Exception as e:
+        return {"status": "error", "message": f"Failed to patch file '{rel_path}': {str(e)}"}
