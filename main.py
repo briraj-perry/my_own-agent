@@ -30,7 +30,7 @@ def main():
         main_cli()
 
     elif args.desktop:
-        print("👾 Starting my_neo-agent Desktop Floating Mascot Overlay...")
+        print("[*] Starting my_neo-agent Desktop Floating Mascot Overlay...")
         from desktop_mascot import launch_desktop_mascot
         launch_desktop_mascot()
 
