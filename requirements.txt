@@ -10,6 +10,7 @@ rich>=13.7.0
 pydantic>=2.6.0
 pydantic-settings>=2.2.0
 pillow>=10.0.0
+customtkinter>=5.2.0
 
 # Document Analysis (Eagle Agent)
 pdfplumber>=0.10.0
